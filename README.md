@@ -1,12 +1,3 @@
-## Planning:  
-
-10 Novembre: Machine à états:
-
-- Annick : Serveur
-- Federico : Client
-
-17 Novembre: Diagrammes temps séquences  
-24 Novembre: Diagramme de classes
-
 ## Outils:
-- (Yed: modélisation de graphes: https://www.yworks.com/products/yed)[https://www.yworks.com/products/yed]
+- [Yed: modélisation de graphes, dont machines d'états: https://www.yworks.com/products/yed](https://www.yworks.com/products/yed)
+- [Umlet: pour faire des graphes UML: http://umlet.com/](http://umlet.com/)
