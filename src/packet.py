@@ -3,7 +3,7 @@
 
 import struct, enum
 
-OPCODE = enum('RRQ', 'WRQ', 'DATA', 'ACK', 'ERR')
+OPCODE = enum(RRQ=1, WRQ=2, DATA=3, ACK=4, ERR=5)
 # OPCODE_RRQ = 1
 # OPCODE_WRQ = 2
 # OPCODE_DATA = 3
@@ -32,24 +32,24 @@ DEFAULT_MODE = "binary"
 
 
 def build_packet_rrq(filename, mode = DEFAULT_MODE):
-    return struct.pack("!H", OPCODE_RRQ) + filename + "\0" + mode + "\0"
+    return struct.pack("!H", OPCODE.RRQ) + filename + "\0" + mode + "\0"
 
 
 def build_packet_wrq(filename, mode = DEFAULT_MODE):
-    return struct.pack("!H", OPCODE_WRQ) + filename + "\0" + mode + "\0"
+    return struct.pack("!H", OPCODE.WRQ) + filename + "\0" + mode + "\0"
 
 
 def build_packet_data(blocknr, data):
-    return struct.pack("!HH", OPCODE_DATA, blocknr) + data
+    return struct.pack("!HH", OPCODE.DATA, blocknr) + data
 
 
 def build_packet_ack(blocknr):
-    return struct.pack("!HH", OPCODE_ACK, blocknr)
+    return struct.pack("!HH", OPCODE.ACK, blocknr)
 
 
 def build_packet_err(errcode, errmsg):
-    return struct.pack("!HH", OPCODE_ERR, errcode) + ERROR_CODES[errcode] + "\0"
-    # return struct.pack("!HH", OPCODE_ERR, errcode) + errmsg + "\0" #initial
+    return struct.pack("!HH", OPCODE.ERR, errcode) + ERROR_CODES[errcode] + "\0"
+    # return struct.pack("!HH", OPCODE.ERR, errcode) + errmsg + "\0" #initial
 
 
 def decode_packet(msg):
@@ -59,24 +59,24 @@ def decode_packet(msg):
     parametres du paquets.
     """
     opcode = struct.unpack("!H", msg[:2])[0]
-    if opcode == OPCODE_RRQ:
+    if opcode == OPCODE.RRQ:
         l = msg[2:].split('\0')
         if len(l) != 3:
             return None
         return opcode, l[1], l[2]
-    elif opcode == OPCODE_WRQ:
+    elif opcode == OPCODE.WRQ:
         l = msg[2:].split('\0')
         if len(l) != 3:
             return None
         return opcode, l[1], l[2]
-    elif opcode == OPCODE_ACK:
+    elif opcode == OPCODE.ACK:
         block_num = struct.unpack("!H", msg[2:])[0]
         return opcode, block_num
-    elif opcode == OPCODE_DATA:
+    elif opcode == OPCODE.DATA:
         block_num = struct.unpack("!H", msg[2:4])[0]
         data = msg[4:]
         return opcode, block_num, data
-    elif opcode == OPCODE_ERR:
+    elif opcode == OPCODE.ERR:
         block_num = struct.unpack("!H", msg[2:4])[0]
         errmsg = msg[4:]
         return opcode, block_num, errmsg
