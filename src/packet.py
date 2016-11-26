@@ -1,4 +1,6 @@
 #! /usr/bin/python
+# -*- coding: utf-8 -*-
+
 import struct
 
 OPCODE_RRQ = 1
@@ -42,7 +44,7 @@ def build_packet_err(errcode, errmsg):
 
 def decode_packet(msg):
     """
-    Cette fonction  permet de recevoir un packet où la premiere valeure
+    Cette fonction  permet de recevoir un packet ou la premiere valeure
     est le OPCODE au format entier et les valeur suivantes sont les donnees des autres
     parametres du paquets.
     """
