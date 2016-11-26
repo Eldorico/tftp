@@ -1,22 +1,32 @@
 #! /usr/bin/python
 # -*- coding: utf-8 -*-
 
-import struct
+import struct, enum
 
-OPCODE_RRQ = 1
-OPCODE_WRQ = 2
-OPCODE_DATA = 3
-OPCODE_ACK = 4
-OPCODE_ERR = 5
+OPCODE = enum('RRQ', 'WRQ', 'DATA', 'ACK', 'ERR')
+# OPCODE_RRQ = 1
+# OPCODE_WRQ = 2
+# OPCODE_DATA = 3
+# OPCODE_ACK = 4
+# OPCODE_ERR = 5
 
-ERROR_CODES = ["Undef",
-               "File not found",
-               "Access violation",
-               "Disk full or allocation exceeded",
-               "Illegal TFTP operation",
-               "Unknown transfer ID",
-               "File already exists",
-               "No such user"]
+ERROR_CODES = enum('Undefined',
+                   'File not found',
+                   'Access violation',
+                   'Disk full or allocation exceeded',
+                   'Illegal TFTP operation',
+                   'Unknown transfer ID',
+                   'File already exists',
+                   'No such user'
+                   )
+# ERROR_CODES = ["Undef",
+#                "File not found",
+#                "Access violation",
+#                "Disk full or allocation exceeded",
+#                "Illegal TFTP operation",
+#                "Unknown transfer ID",
+#                "File already exists",
+#                "No such user"]
 
 DEFAULT_MODE = "binary"
 
