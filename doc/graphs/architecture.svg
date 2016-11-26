@@ -179,7 +179,7 @@
            sodipodi:role="line"
            id="tspan4014"><tspan
    style="fill:#ff6600"
-   id="tspan4020">BinaryString :</tspan> build_packet_err(Err_code, Err_msg)</tspan><tspan
+   id="tspan4020">BinaryString :</tspan> build_packet_err(Err_code)</tspan><tspan
            y="1008.4816"
            x="687.42188"
            sodipodi:role="line"

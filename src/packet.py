@@ -4,11 +4,6 @@
 import struct, enum
 
 OPCODE = enum(RRQ=1, WRQ=2, DATA=3, ACK=4, ERR=5)
-# OPCODE_RRQ = 1
-# OPCODE_WRQ = 2
-# OPCODE_DATA = 3
-# OPCODE_ACK = 4
-# OPCODE_ERR = 5
 
 ERROR_CODES = enum('Undefined',
                    'File not found',
@@ -19,14 +14,6 @@ ERROR_CODES = enum('Undefined',
                    'File already exists',
                    'No such user'
                    )
-# ERROR_CODES = ["Undef",
-#                "File not found",
-#                "Access violation",
-#                "Disk full or allocation exceeded",
-#                "Illegal TFTP operation",
-#                "Unknown transfer ID",
-#                "File already exists",
-#                "No such user"]
 
 DEFAULT_MODE = "binary"
 
@@ -47,7 +34,7 @@ def build_packet_ack(blocknr):
     return struct.pack("!HH", OPCODE.ACK, blocknr)
 
 
-def build_packet_err(errcode, errmsg):
+def build_packet_err(errcode):
     return struct.pack("!HH", OPCODE.ERR, errcode) + ERROR_CODES[errcode] + "\0"
     # return struct.pack("!HH", OPCODE.ERR, errcode) + errmsg + "\0" #initial
 
