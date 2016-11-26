@@ -46,31 +46,36 @@ def receive_file(sock, fd, first_data_blk, option):
 
     while not done:
         # reception des paquets msg
-        paquet = sock.recvfrom(MAX_PACKET_SIZE)
-        #Decode du msg avec paquet.py
-        opcode,blck_num, data = decodepaquet(paquet)
-        #test OPCODE
-        if opcode == ERROR:
-            print "Error", data
-            return False
-        elif opcode == DATA:
-            # il s'agit bien d'un paquet DATA.
-            if block_num != block_num_ack+1:
-                # skip unexpected #block data packet
-                print 'unexpected block num %d' % block_num
-                continue
-            fd.write(data)
-            sock.send(build_ack_paquet(1))
+	# receive avec timeout socket sinon resend ACK blk_num
+	while paquet is None
+		paquet = sock.recvfrom(MAX_PACKET_SIZE+4)
+		except socket.timeout:
+		sock.send(build_ack_paquet(block_num))
 
-            if len(data) < MAX_PACKET_SIZE:
-                done = True
-                fd.close()
-                file_len = MAX_PACKET_SIZE * (block_num_ack -1) + len(data)
-                print '%d bytes recu.' % file_len
-                # dernier paquet set de DONE = 1
-                done = 1
+		#Decode du msg avec paquet.py
+		opcode,blck_num, data = decodepaquet(paquet)
+		#test OPCODE
+		if opcode == ERROR:
+		    print "Error", data
+		    return False
+		elif opcode == DATA:
+		    # il s'agit bien d'un paquet DATA.
+		    if block_num != block_num_ack+1:
+		        # skip unexpected #block data packet
+		        print 'unexpected block num %d' % block_num
+		        continue
+		    fd.write(data)
+		    sock.send(build_ack_paquet(block_num))
 
-            block_num_ack += 1
+		    if len(data) < MAX_PACKET_SIZE:
+		        done = True
+		        fd.close()
+		        file_len = MAX_PACKET_SIZE * (block_num_ack -1) + len(data)
+		        print '%d bytes recu.' % file_len
+		        # dernier paquet set de DONE = 1
+		        done = 1
+
+		    block_num_ack += 1
 
     return True
 
