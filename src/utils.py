@@ -9,6 +9,7 @@ import binascii
 import argparse
 from aenum import Enum
 
+
 class AppRq(Enum):
     GET = 1
     PUT = 2

@@ -1,7 +1,7 @@
 #! /usr/bin/python
 # -*- coding: utf-8 -*-
-
-import struct, enum
+from aenum import enum
+import struct
 
 OPCODE = enum(RRQ=1, WRQ=2, DATA=3, ACK=4, ERR=5)
 # OPCODE_RRQ = 1
