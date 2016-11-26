@@ -16,12 +16,14 @@ ERROR_CODES = ["Undef",
                "File already exists",
                "No such user"]
 
+DEFAULT_MODE = "binary"
 
-def build_packet_rrq(filename, mode):
+
+def build_packet_rrq(filename, mode = DEFAULT_MODE):
     return struct.pack("!H", OPCODE_RRQ) + filename + "\0" + mode + "\0"
 
 
-def build_packet_wrq(filename, mode):
+def build_packet_wrq(filename, mode = DEFAULT_MODE):
     return struct.pack("!H", OPCODE_WRQ) + filename + "\0" + mode + "\0"
 
 
@@ -40,9 +42,9 @@ def build_packet_err(errcode, errmsg):
 
 def decode_packet(msg):
     """
-    Cette fonction  permet de recevoir un packet où la première valeure
-    est le OPCODE au format entier et les valeur suivantes sont les données des autres
-    paramètres du paquets.
+    Cette fonction  permet de recevoir un packet où la premiere valeure
+    est le OPCODE au format entier et les valeur suivantes sont les donnees des autres
+    parametres du paquets.
     """
     opcode = struct.unpack("!H", msg[:2])[0]
     if opcode == OPCODE_RRQ:
