@@ -7,7 +7,11 @@ import sys
 import struct
 import binascii
 import argparse
+from aenum import Enum
 
+class AppRq(Enum):
+    GET = 1
+    PUT = 2
 
 MAX_PACKET_SIZE = 512
 
@@ -16,10 +20,13 @@ MAX_PACKET_SIZE = 512
 def parser():
     parser = argparse.ArgumentParser(description='Tftp python.')
     group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument('-get', help='Get + nom du fichier', nargs = 3)
-    group.add_argument('-put', help='Put + nom du fichier', nargs = 3)
-    return parser.parse_args().get[1]
-
+    group.add_argument('-get', help='get a file from server', nargs=3, metavar=('server', 'port', 'filename'))
+    group.add_argument('-put', help='send a file to server', nargs=3, metavar=('server', 'port', 'filename'))
+    parsed_arg = parser.parse_args()
+    if parsed_arg.get:
+        return AppRq.GET, parsed_arg.get[0], parsed_arg.get[1], parsed_arg.get[2]
+    elif parsed_arg.put:
+        return AppRq.PUT, parsed_arg.put[0], parsed_arg.put[1], parsed_arg.put[2]
 
 # -- receive file --.
 def receive_file(sock, fd, first_data_blk, option):
