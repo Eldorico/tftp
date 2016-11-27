@@ -1,3 +1,8 @@
 *.pyc
 README.pdf
 .idea/
+*.aux
+*.log
+*.out
+*.toc
+*.synctex.gz
