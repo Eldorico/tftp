@@ -1,31 +1,88 @@
+import os
 import sys
+import random
 import socket
 from utils import *
-from packet import build_packet_wrq
+from packet import *
 
+
+"""  ------------------  """
+"""  Script starts here  """
+"""  ------------------  """
+
+TIMEOUT_IN_SECONDS = 1
 
 # parse input
-app_rq, host, port, filename = parser()
+app_request, host, port, filename = parser()
+
 
 # open file
 try:
-    if app_rq == AppRq.GET:
-        file_obj = open(filename, 'w+')
-    elif app_rq == AppRq.PUT:
+    if app_request == AppRq.GET:
+        file_obj = open(filename, 'w')  #TODO: think of a backup plan?
+    elif app_request == AppRq.PUT:
         file_obj = open(filename, 'r')
 except IOError, e:
+    if app_request == AppRq.GET:
+        sys.stderr.write("Can't create or erase file : ")
+    else:
+        sys.stderr.write("Can't open file : ")
     sys.stderr.write("%s\n" % str(e))
+    close_and_exit(None, None, -1)
 
 
-file_obj.close()
+# create request packet
+if app_request == AppRq.GET:
+    request_packet = build_packet_rrq(filename)
+else:
+    request_packet = build_packet_wrq(filename)
 
 
 # send request
-"""
-nb_attemp = 0
-if app_rq == AppRq.GET:
-    rq_packet = build_packet_rrq
+try:
+    attempt_number = 4
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    while attempt_number < 4:
+        source_tid = random.randint(10000, 60000)
+        sock.bind(('', source_tid))
+        sock.sendto(request_packet, (host, port))
 
-sock_request = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-sock_request.sendto(, (host, port))
-"""
+        # get an answer or restart loop
+        sock.settimeout(TIMEOUT_IN_SECONDS)
+        try:
+            paquet_response, address_response = socket.recvfom(MAX_PACKET_SIZE)
+        except socket.timeout:
+            attempt_number += 1
+            continue
+
+        # analyse answer
+        resp_op_code, resp_blk_num, resp_data = decode_packet(paquet_response)
+        if app_request == AppRq.GET and resp_op_code == OPCODE.DATA and resp_blk_num == 1:
+            break
+        elif app_request == AppRq.PUT and resp_op_code == OPCODE.ACK and resp_blk_num == 0:
+            break
+        elif resp_op_code == OPCODE.ERR:
+            break
+        else:
+            attempt_number += 1
+
+except socket.error, msg:
+    sys.stderr.write('Failed to send request: error Code : ' + str(msg[0]) + ' Message: ' + msg[1])
+    close_and_exit(file_obj, sock, -2)
+
+
+# if errors, manage request answer errors and exit
+if attempt_number == 4:
+    sys.stderr.write('Failed to connect to host %s on port %d. Timeout reached.'%(host, port))
+    close_and_exit(file_obj, sock, -3)
+elif resp_op_code == OPCODE.ERR:
+    sys.stderr.write('Connexion refused with host %s on port %d. Error code %s'%(host, port, ERROR_CODES[resp_data]))
+    close_and_exit(file_obj, sock, -4)
+
+
+# Here, we have got a connexion.
+
+#
+
+
+file_obj.close()  # TODO: delete this line
