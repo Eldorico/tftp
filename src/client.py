@@ -11,6 +11,7 @@ from packet import *
 """  ------------------  """
 
 TIMEOUT_IN_SECONDS = 1
+MAX_ATTEMPTS_NUMBER = 4
 
 # parse input
 app_request, host, port, filename = parser()
@@ -40,9 +41,9 @@ else:
 
 # send request
 try:
-    attempt_number = 4
-    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    while attempt_number < 4:
+    attempt_number = 0
+    while attempt_number < MAX_ATTEMPTS_NUMBER:
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         source_tid = random.randint(10000, 60000)
         sock.bind(('', source_tid))
         sock.sendto(request_packet, (host, port))
@@ -50,7 +51,7 @@ try:
         # get an answer or restart loop
         sock.settimeout(TIMEOUT_IN_SECONDS)
         try:
-            paquet_response, address_response = socket.recvfom(MAX_PACKET_SIZE)
+            paquet_response, address_response = sock.recvfrom(MAX_PACKET_SIZE)
         except socket.timeout:
             attempt_number += 1
             continue
@@ -65,24 +66,28 @@ try:
             break
         else:
             attempt_number += 1
+            sock.shutdown()
 
 except socket.error, msg:
     sys.stderr.write('Failed to send request: error Code : ' + str(msg[0]) + ' Message: ' + msg[1])
-    close_and_exit(file_obj, sock, -2)
+    close_and_exit(file_obj, sock, -2, filename if app_request == AppRq.GET else None)
 
 
 # if errors, manage request answer errors and exit
-if attempt_number == 4:
-    sys.stderr.write('Failed to connect to host %s on port %d. Timeout reached.'%(host, port))
-    close_and_exit(file_obj, sock, -3)
+if attempt_number == MAX_ATTEMPTS_NUMBER:
+    sys.stderr.write('Failed to connect to host %s on port %d.\n   Timeout reached.'%(host, port))
+    close_and_exit(file_obj, sock, -3, filename if app_request == AppRq.GET else None)
 elif resp_op_code == OPCODE.ERR:
-    sys.stderr.write('Connexion refused with host %s on port %d. Error code %s'%(host, port, ERROR_CODES[resp_data]))
-    close_and_exit(file_obj, sock, -4)
+    sys.stderr.write('Connexion refused with host %s on port %d.\n   Error code: %s. \n   Message: %s'%(host, port, ERROR_CODES[resp_blk_num], resp_data))
+    close_and_exit(file_obj, sock, -4, filename if app_request == AppRq.GET else None)
 
 
-# Here, we have got a connexion.
+# get or send file
+print("Wesh: ")
+print(str(address_response))
 
-#
+#sock.connect()
 
 
-file_obj.close()  # TODO: delete this line
+
+#file_obj.close()  # TODO: delete this line

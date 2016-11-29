@@ -5,6 +5,7 @@
 
 import os
 import sys
+import socket
 import struct
 import binascii
 import argparse
@@ -51,9 +52,9 @@ def parser():
     group.add_argument('-put', help='send a file to server', nargs=3, metavar=('server', 'port', 'filename'))
     parsed_arg = parser.parse_args()
     if parsed_arg.get:
-        return AppRq.GET, parsed_arg.get[0], parsed_arg.get[1], parsed_arg.get[2]
+        return AppRq.GET, parsed_arg.get[0], int(parsed_arg.get[1]), parsed_arg.get[2]
     elif parsed_arg.put:
-        return AppRq.PUT, parsed_arg.put[0], parsed_arg.put[1], parsed_arg.put[2]
+        return AppRq.PUT, parsed_arg.put[0], int(parsed_arg.put[1]), parsed_arg.put[2]
 
 # -- receive file --.
 def receive_file(sock, fd, first_data_blk, option):

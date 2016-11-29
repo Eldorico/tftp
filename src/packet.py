@@ -3,17 +3,22 @@
 from aenum import enum
 import struct
 
-OPCODE = enum(RRQ=1, WRQ=2, DATA=3, ACK=4, ERR=5)
 
-ERROR_CODES = enum('Undefined',
-                   'File not found',
-                   'Access violation',
-                   'Disk full or allocation exceeded',
-                   'Illegal TFTP operation',
-                   'Unknown transfer ID',
-                   'File already exists',
-                   'No such user'
-                   )
+class OPCODE(enum):
+    RRQ = 1
+    WRQ = 2
+    DATA = 3
+    ACK = 4
+    ERR = 5
+
+ERROR_CODES = ["Undef",
+               "File not found",
+               "Access violation",
+               "Disk full or allocation exceeded",
+               "Illegal TFTP operation",
+               "Unknown transfer ID",
+               "File already exists",
+               "No such user"]
 
 DEFAULT_MODE = "binary"
 
