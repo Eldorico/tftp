@@ -20,7 +20,7 @@ ERROR_CODES = ["Undef",
                "File already exists",
                "No such user"]
 
-DEFAULT_MODE = "binary"
+DEFAULT_MODE = "octet"
 
 
 def build_packet_rrq(filename, mode = DEFAULT_MODE):

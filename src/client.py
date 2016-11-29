@@ -1,4 +1,3 @@
-import os
 import sys
 import random
 import socket
@@ -20,7 +19,7 @@ app_request, host, port, filename = parser()
 # open file
 try:
     if app_request == AppRq.GET:
-        file_obj = open(filename, 'w')  #TODO: think of a backup plan?
+        file_obj = open(filename, 'w')  # TODO: think of a backup plan? (file is deleted if an error occurs)
     elif app_request == AppRq.PUT:
         file_obj = open(filename, 'r')
 except IOError, e:
@@ -51,13 +50,13 @@ try:
         # get an answer or restart loop
         sock.settimeout(TIMEOUT_IN_SECONDS)
         try:
-            paquet_response, address_response = sock.recvfrom(MAX_PACKET_SIZE)
+            response_packet, response_address = sock.recvfrom(MAX_PACKET_SIZE)
         except socket.timeout:
             attempt_number += 1
             continue
 
         # analyse answer
-        resp_op_code, resp_blk_num, resp_data = decode_packet(paquet_response)
+        resp_op_code, resp_blk_num, resp_data = decode_packet(response_packet)
         if app_request == AppRq.GET and resp_op_code == OPCODE.DATA and resp_blk_num == 1:
             break
         elif app_request == AppRq.PUT and resp_op_code == OPCODE.ACK and resp_blk_num == 0:
@@ -67,27 +66,33 @@ try:
         else:
             attempt_number += 1
             sock.shutdown()
-
 except socket.error, msg:
-    sys.stderr.write('Failed to send request: error Code : ' + str(msg[0]) + ' Message: ' + msg[1])
+    sys.stderr.write('Failed to send request: error Code : ' + str(msg[0]) + ' Message: ' + msg[1]+'\n')
     close_and_exit(file_obj, sock, -2, filename if app_request == AppRq.GET else None)
 
 
 # if errors, manage request answer errors and exit
 if attempt_number == MAX_ATTEMPTS_NUMBER:
-    sys.stderr.write('Failed to connect to host %s on port %d.\n   Timeout reached.'%(host, port))
+    sys.stderr.write('Failed to connect to host %s on port %d.\n   Timeout reached.\n'%(host, port))
     close_and_exit(file_obj, sock, -3, filename if app_request == AppRq.GET else None)
 elif resp_op_code == OPCODE.ERR:
-    sys.stderr.write('Connexion refused with host %s on port %d.\n   Error code: %s. \n   Message: %s'%(host, port, ERROR_CODES[resp_blk_num], resp_data))
+    sys.stderr.write('Connexion refused with host %s on port %d.\n   Error code: %s. \n   Message: %s\n'%(host, port, ERROR_CODES[resp_blk_num], resp_data))
     close_and_exit(file_obj, sock, -4, filename if app_request == AppRq.GET else None)
 
 
 # get or send file
-print("Wesh: ")
-print(str(address_response))
+destination_tid = response_address[1]
+sock.connect((host, destination_tid))
+if app_request == AppRq.GET:
+    task_done = receive_file(sock, file_obj, resp_data)
+else:
+    task_done = send_file(sock, file_obj)
 
-#sock.connect()
-
-
-
-#file_obj.close()  # TODO: delete this line
+# close and exit
+if task_done:
+    close_and_exit(file_obj, sock, 0, None)
+else:
+    if app_request == AppRq.GET:
+        close_and_exit(file_obj, sock, 1, filename) # TODO: try to get the error code of ERR paquet from send or receive fonctions from Lerda
+    else:
+        close_and_exit(file_obj, sock, 1)  # TODO: try to get the error code of ERR paquet from send or receive fonctions from Lerda

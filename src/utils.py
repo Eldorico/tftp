@@ -18,31 +18,6 @@ class AppRq(Enum):
 
 MAX_PACKET_SIZE = 512
 
-def close_and_exit(file_object, socket_obj, exit_code, filepath_to_delete = None):
-    """ closes a file, a socket and exits the program with a given exit code
-    :param file_object:  the file object to close
-    :param socket_obj: the socket object to close
-    :param exit_code:
-    :param filepath_to_delete: if not None, the file represented by filepath will be deleted
-    """
-    # close file and delete if needed
-    try:
-        if file_object is not None:
-            file_object.close()
-            if filepath_to_delete is not None:
-                os.remove(filepath_to_delete)
-    except Exception, err:
-        sys.stderr.write("%s\n" % str(err))
-
-    # close socket
-    try:
-        if socket_obj is not None:
-            socket_obj.shutdown(socket.SHUT_RDWR)
-    except Exception, err:
-        sys.stderr.write("%s\n" % str(err))
-
-    # exit program
-    sys.exit(exit_code)
 
 # le parser return arg0 = nom serveur , arg1 = port du serveur, arg2 = fichier destination
 def parser():
@@ -106,9 +81,38 @@ def receive_file(sock, fd, first_data_blk, option):
 
     return True
 
-if __name__ == "__main__":
 
-    parser()
+def send_file(socket_obj, file_obj):
+    """
+    :param socket_obj:
+    :param file_obj:
+    :return:
+    """
+    pass
+
+
+def close_and_exit(file_object, socket_obj, exit_code, filepath_to_delete = None):
+    """ closes a file, a socket and exits the program with a given exit code
+    :param file_object:  the file object to close
+    :param socket_obj: the socket object to close
+    :param exit_code:
+    :param filepath_to_delete: if not None, the file represented by filepath will be deleted
+    """
+    # close file and delete if needed
+    try:
+        if file_object is not None:
+            file_object.close()
+            if filepath_to_delete is not None:
+                os.remove(filepath_to_delete)
+
+        # close socket
+        if socket_obj is not None:
+            socket_obj.shutdown(socket.SHUT_RDWR)
+    except Exception:
+        pass
+
+    # exit program
+    sys.exit(exit_code)
 
 
 
