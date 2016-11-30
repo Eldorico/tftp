@@ -8,7 +8,10 @@ import sys
 import socket
 import struct
 import binascii
+import packet
 import argparse
+from packet import decode_packet
+from packet import build_packet_ack
 from aenum import Enum
 
 
@@ -16,7 +19,7 @@ class AppRq(Enum):
     GET = 1
     PUT = 2
 
-MAX_PACKET_SIZE = 512
+MAX_PACKET_SIZE = 508
 
 
 # le parser return arg0 = nom serveur , arg1 = port du serveur, arg2 = fichier destination
@@ -36,8 +39,9 @@ def receive_file(sock, fd, first_data_blk, option):
     #on traite le premiere paquet et ACK
     if first_data_blk:
         fd.write(first_data_blk)
-        sock.send(build_ack_paquet(1))
+        sock.send(build_packet_ack(1))
     block_num_ack = 1
+
     #loop du tftp reception donees.
     done = 0
 
@@ -48,36 +52,37 @@ def receive_file(sock, fd, first_data_blk, option):
 
     while not done:
         # reception des paquets msg
-	# receive avec timeout socket sinon resend ACK blk_num
-	while paquet is None
-		paquet = sock.recvfrom(MAX_PACKET_SIZE+4)
-		except socket.timeout:
-		sock.send(build_ack_paquet(block_num))
+        # receive avec timeout socket sinon resend ACK blk_num
+        while paquet is None:
+            try:
+                paquet = sock.recvfrom(MAX_PACKET_SIZE+4)
+            except socket.timeout:
+                sock.send(build_packet_ack(block_num_ack))
 
-		#Decode du msg avec paquet.py
-		opcode,blck_num, data = decodepaquet(paquet)
-		#test OPCODE
-		if opcode == ERROR:
-		    print "Error", data
-		    return False
-		elif opcode == DATA:
-		    # il s'agit bien d'un paquet DATA.
-		    if block_num != block_num_ack+1:
-		        # skip unexpected #block data packet
-		        print 'unexpected block num %d' % block_num
-		        continue
-		    fd.write(data)
-		    sock.send(build_ack_paquet(block_num))
+            #Decode du msg avec paquet.py
+            opcode,blck_num, data = decode_packet(paquet)
+            #test OPCODE
+            if opcode == "ERROR":
+                print "Error", data
+                return False
+            elif opcode == "DATA":
+                # il s'agit bien d'un paquet DATA.
+                if blck_num != block_num_ack+1:
+                    # skip unexpected #block data packet
+                    print 'unexpected block num', blck_num
+                    continue
+                fd.write(data)
+                sock.send(build_packet_ack(blck_num))
 
-		    if len(data) < MAX_PACKET_SIZE:
-		        done = True
-		        fd.close()
-		        file_len = MAX_PACKET_SIZE * (block_num_ack -1) + len(data)
-		        print '%d bytes recu.' % file_len
-		        # dernier paquet set de DONE = 1
-		        done = 1
+                if len(data) < MAX_PACKET_SIZE:
+                    #done = True
+                    fd.close()
+                    file_len = MAX_PACKET_SIZE * (block_num_ack -1) + len(data)
+                    print '%d bytes recu.' % file_len
+                    # dernier paquet set de DONE = 1
+                    done = 1
 
-		    block_num_ack += 1
+                block_num_ack += 1
 
     return True
 
