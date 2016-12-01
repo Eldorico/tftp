@@ -17,7 +17,7 @@ class AppRq(Enum):
     GET = 1
     PUT = 2
 
-MAX_PACKET_SIZE = 516
+MAX_PACKET_SIZE = 512
 MAX_ATTEMPTS_NUMBER = 4
 
 
@@ -50,19 +50,18 @@ def receive_file(sock, fd, first_data_blk):
     """
 
     while done == 0:
-        print "fede"
         attempt_number = 0
         # reception des paquets msg
         # receive avec timeout socket sinon resend ACK blk_num
         while attempt_number < MAX_ATTEMPTS_NUMBER:
             try:
-                paquet, response_address = sock.recvfrom(MAX_PACKET_SIZE)
+                paquet, response_address = sock.recvfrom(516)
             except socket.timeout:
                 sock.send(build_packet_ack(block_num_ack))
                 attempt_number += 1
 
                 continue
-        print "test", paquet
+        #print "test", paquet
         #Decode du msg avec paquet.py
         opcode,blck_num, data = decode_packet(paquet)
         print "blck_num", blck_num

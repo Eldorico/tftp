@@ -50,7 +50,7 @@ try:
         # get an answer or restart loop
         sock.settimeout(TIMEOUT_IN_SECONDS)
         try:
-            response_packet, response_address = sock.recvfrom(MAX_PACKET_SIZE)
+            response_packet, response_address = sock.recvfrom(516)
             print response_address
         except socket.timeout:
             attempt_number += 1
