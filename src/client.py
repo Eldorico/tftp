@@ -51,15 +51,14 @@ try:
         sock.settimeout(TIMEOUT_IN_SECONDS)
         try:
             response_packet, response_address = sock.recvfrom(516)
-            print response_address
+
         except socket.timeout:
             attempt_number += 1
             continue
 
         # analyse answer
         resp_op_code, resp_blk_num, resp_data = decode_packet(response_packet)
-        print resp_op_code
-        print resp_blk_num
+
         if app_request == AppRq.GET and resp_op_code == OPCODE.DATA and resp_blk_num == 1:
             break
         elif app_request == AppRq.PUT and resp_op_code == OPCODE.ACK and resp_blk_num == 0:

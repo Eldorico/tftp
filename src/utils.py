@@ -55,17 +55,17 @@ def receive_file(sock, fd, first_data_blk):
         # receive avec timeout socket sinon resend ACK blk_num
         while attempt_number < MAX_ATTEMPTS_NUMBER:
             try:
-                paquet, response_address = sock.recvfrom(516)
+                paquet = sock.recv(516)
+                break
             except socket.timeout:
                 sock.send(build_packet_ack(block_num_ack))
                 attempt_number += 1
-
                 continue
+
         #print "test", paquet
         #Decode du msg avec paquet.py
         opcode,blck_num, data = decode_packet(paquet)
-        print "blck_num", blck_num
-        print opcode
+
         #test OPCODE
         if opcode == OPCODE.ERR:
             print "Error", data
@@ -77,7 +77,7 @@ def receive_file(sock, fd, first_data_blk):
                 print 'unexpected block num', blck_num
                 continue
             fd.write(data)
-            print "ACK", blck_num
+
             sock.send(build_packet_ack(blck_num))
             done = 0
 
@@ -88,8 +88,6 @@ def receive_file(sock, fd, first_data_blk):
                 print '%d bytes recu.' % file_len
                 done = 1
                 # dernier paquet set de DONE = 1
-            print "qui"
-
 
             block_num_ack += 1
 
