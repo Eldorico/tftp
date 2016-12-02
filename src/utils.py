@@ -48,11 +48,9 @@ def receive_file(sock, fd, first_data_blk):
         return True
 
     else:
-
         #loop du tftp reception donees.
         done = 0
 
-        attempt_number = 0
         """
             Si packet data OK send ACK au serveur;
             Si erreur dans le packet ou timeout, exit et return erreur;
@@ -102,13 +100,44 @@ def receive_file(sock, fd, first_data_blk):
     return True
 
 
-def send_file(socket_obj, file_obj):
+def send_file(sock, fd,):
     """
     :param socket_obj:
     :param file_obj:
     :return:
     """
-    pass
+    # loop du tftp reception donees.
+    done = 0
+    block_num = 0
+    block_num_ack = 0
+
+    """
+        Je recois les paquets et je send le ACK;
+        Si le ACK recu est mauvaise je re-send la data precedente ou timeout,
+    """
+    while done == 0 and block_num == block_num_ack:
+        block_num +=1
+        data = fd.read(MAX_PACKET_SIZE)
+        if len(data) < MAX_PACKET_SIZE:
+            done = 0
+
+        sock.send(build_packet_data(block_num, data))
+
+        attempt_number = 0
+        # reception des paquets msg
+        # receive avec timeout socket sinon resend ACK blk_num
+        while attempt_number < MAX_ATTEMPTS_NUMBER:
+            try:
+                ack = sock.recv(4)
+                opcode, block_num_ack = decode_packet(ack)
+                print opcode, block_num_ack
+                break
+            except socket.timeout:
+                sock.send(build_packet_data(block_num, data))
+                attempt_number += 1
+                continue
+
+    return True
 
 
 def close_and_exit(file_object, socket_obj, exit_code, filepath_to_delete = None):

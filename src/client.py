@@ -56,7 +56,12 @@ try:
             continue
 
         # analyse answer
-        resp_op_code, resp_blk_num, resp_data = decode_packet(response_packet)
+        if app_request == AppRq.GET:
+            resp_op_code, resp_blk_num, resp_data = decode_packet(response_packet)
+        else:
+            resp_op_code, resp_blk_num = decode_packet(response_packet)
+            print resp_op_code
+            print resp_blk_num
 
         if app_request == AppRq.GET and resp_op_code == OPCODE.DATA and resp_blk_num == 1:
             break
@@ -87,6 +92,7 @@ sock.connect((host, destination_tid))
 if app_request == AppRq.GET:
     task_done = receive_file(sock, file_obj, resp_data)
 else:
+    print "send"
     task_done = send_file(sock, file_obj)
 
 # close and exit
