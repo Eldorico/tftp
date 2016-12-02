@@ -51,7 +51,6 @@ try:
         sock.settimeout(TIMEOUT_IN_SECONDS)
         try:
             response_packet, response_address = sock.recvfrom(516)
-
         except socket.timeout:
             attempt_number += 1
             continue
