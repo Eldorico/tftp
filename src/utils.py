@@ -13,12 +13,54 @@ from packet import *
 from aenum import Enum
 
 
+class STATES(Enum):
+    WAIT_WRQ_ACK = 1
+    WAIT_ACK = 2
+    WAIT_LAST_ACK = 3
+    WAIT_FIRST_DATA = 4
+    WAIT_DATA = 5
+    WAIT_TERMINATION_TIMER_OUT = 6
+    DEBUG_RECEIVE_OR_SEND = 7
+
+
 class AppRq(Enum):
     GET = 1
     PUT = 2
 
 MAX_PACKET_SIZE = 512
 MAX_ATTEMPTS_NUMBER = 4
+
+
+def state_wait_ack(protocol_variables):
+    """
+    :param protocol_variables:
+    :return:
+    """
+    pass
+
+
+def state_wait_data(protocol_variables):
+    """
+    :param protocol_variables:
+    :return:
+    """
+    pass
+
+
+def state_wait_last_ack(protocol_variables):
+    """
+    :param protocol_variables:
+    :return:
+    """
+    pass
+
+
+def state_wait_termination_timer_out(protocol_variables):
+    """
+    :param protocol_variables:
+    :return:
+    """
+    pass
 
 
 # le parser return arg0 = nom serveur , arg1 = port du serveur, arg2 = fichier destination
