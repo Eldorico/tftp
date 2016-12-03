@@ -103,7 +103,8 @@ def state_wait_data(pv):
             pv.sock.send(build_packet_ack(resp_blk_num))
 
         if len(resp_data) < MAX_PACKET_SIZE:
-            pv.sock.send(build_packet_ack(pv.last_block_num))
+            pv.sock.send(build_packet_ack(resp_blk_num))
+            pv.last_block_num = resp_blk_num
             pv.state = STATES.WAIT_TERMINATION_TIMER_OUT
             return
 
@@ -115,7 +116,7 @@ def state_wait_last_ack(pv):
     # reception du last paquet
     while attempt_number < MAX_ATTEMPTS_NUMBER:
         try:
-            ack = pv.sock.recv()
+            ack = pv.sock.recv(MAX_PACKET_SIZE)
             op_code, resp_blk_num, resp_data = decode_packet(ack)
             if op_code == OPCODE.ERR:
                 sys.stderr.write('Error code: %s. \n   Message: %s\n' % (ERROR_CODES[resp_blk_num], resp_data))
