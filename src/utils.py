@@ -31,37 +31,129 @@ MAX_PACKET_SIZE = 512
 MAX_ATTEMPTS_NUMBER = 4
 
 
-def state_wait_ack(protocol_variables):
+def state_wait_ack(pv):
+
+    block_num = 1
     """
-    :param protocol_variables:
-    :return:
+        Je recois les paquets et je send le ACK;
+        Si le ACK recu est mauvaise je re-send la data precedente ou timeout,
     """
-    pass
+    while True:
+        block_num +=1
+        data_next = pv.fileobj.read(MAX_PACKET_SIZE)
+
+        attempt_number = 0
+        # reception des paquets ACK 1 --> penultimate ACK
+        while attempt_number < MAX_ATTEMPTS_NUMBER:
+            try:
+                ack = pv.sock.recv(MAX_PACKET_SIZE)
+                op_code, resp_blk_num, resp_data = decode_packet(ack)
+                if op_code == OPCODE.ERR:
+                    sys.stderr.write('Error code: %s. \n   Message: %s\n' % (ERROR_CODES[resp_blk_num], resp_data))
+                    close_and_exit(pv.file_obj, pv.sock, -4)
+                break
+            except socket.timeout:
+                pv.socksend(build_packet_data(pv.block_num, pv.data))
+                attempt_number += 1
+                continue
+        if attempt_number == MAX_ATTEMPTS_NUMBER:
+            sys.stderr.write('Failed to connect to host %s on port %d.\n   Timeout reached.\n' % (pv.host, pv.port))
+            close_and_exit(pv.file_obj, pv.sock, -3)
+
+        pv.sock.send(build_packet_data(block_num, data_next))
+
+        if len(data_next) < MAX_PACKET_SIZE:
+            # go the the STATE = LAST_ACK
+            pv.last_data_sent = data_next
+            pv.last_block_num = block_num
+            pv.state = STATES.WAIT_LAST_ACK
+            return
+
+def state_wait_data(pv):
+
+    block_num_ack = 1
+    while True:
+        attempt_number = 0
+        # reception des paquets msg
+        # receive avec timeout socket sinon resend ACK blk_num
+        while attempt_number < MAX_ATTEMPTS_NUMBER:
+            try:
+                paquet = pv.sock.recv(516)
+                break
+            except socket.timeout:
+                pv.sock.send(build_packet_ack(block_num_ack))
+                attempt_number += 1
+                continue
+        if attempt_number == MAX_ATTEMPTS_NUMBER:
+            sys.stderr.write('Failed to connect to host %s on port %d.\n   Timeout reached.\n' % (pv.host, pv.port))
+            close_and_exit(pv.file_obj, pv.sock, -3, pv.filename)
+        #Decode du msg avec paquet.py
+        op_code, resp_blk_num, resp_data = decode_packet(paquet)
+        if op_code == OPCODE.ERR:
+            sys.stderr.write('Error code: %s. \n   Message: %s\n' % (ERROR_CODES[resp_blk_num], resp_data))
+            close_and_exit(pv.file_obj, pv.sock, -4, pv.filename)
+
+        elif op_code == OPCODE.DATA:
+            # il s'agit bien d'un paquet DATA.
+            if resp_blk_num != block_num_ack+1:
+                # skip unexpected #block data packet
+                print 'unexpected block num', resp_blk_num
+                continue
+            pv.file_obj.write(resp_data)
+            pv.sock.send(build_packet_ack(resp_blk_num))
+
+        if len(resp_data) < MAX_PACKET_SIZE:
+            pv.sock.send(build_packet_ack(pv.last_block_num))
+            pv.state = STATES.WAIT_TERMINATION_TIMER_OUT
+            return
+
+    block_num_ack += 1
 
 
-def state_wait_data(protocol_variables):
-    """
-    :param protocol_variables:
-    :return:
-    """
-    pass
+def state_wait_last_ack(pv):
+    attempt_number = 0
+    # reception du last paquet
+    while attempt_number < MAX_ATTEMPTS_NUMBER:
+        try:
+            ack = pv.sock.recv()
+            op_code, resp_blk_num, resp_data = decode_packet(ack)
+            if op_code == OPCODE.ERR:
+                sys.stderr.write('Error code: %s. \n   Message: %s\n' % (ERROR_CODES[resp_blk_num], resp_data))
+                close_and_exit(pv.file_obj, pv.sock, -4)
+            break
+        except socket.timeout:
+            pv.socksend(build_packet_data(pv.block_num, pv.data))
+            attempt_number += 1
+            continue
+    if attempt_number == MAX_ATTEMPTS_NUMBER:
+        sys.stderr.write('Failed to connect to host %s on port %d.\n   Timeout reached.\n' % (pv.host, pv.port))
+        close_and_exit(pv.file_obj, pv.sock, -3)
+    else :
+        close_and_exit(pv.file_obj, pv.sock, 0)
 
 
-def state_wait_last_ack(protocol_variables):
-    """
-    :param protocol_variables:
-    :return:
-    """
-    pass
+def state_wait_termination_timer_out(pv):
 
-
-def state_wait_termination_timer_out(protocol_variables):
-    """
-    :param protocol_variables:
-    :return:
-    """
-    pass
-
+    while True:
+        attempt_number = 0
+        # reception des paquets msg
+        # receive avec timeout socket sinon resend ACK blk_num
+        while attempt_number < MAX_ATTEMPTS_NUMBER:
+            try:
+                paquet = pv.sock.recv(516)
+                break
+            except socket.timeout:
+                pv.sock.send(build_packet_ack(pv.last_block_num))
+                attempt_number += 1
+                continue
+        if attempt_number == MAX_ATTEMPTS_NUMBER:
+            #exit correctly
+            close_and_exit(pv.file_obj, pv.sock, 0)
+        #Decode du msg avec paquet.py
+        op_code, resp_blk_num, resp_data = decode_packet(paquet)
+        if op_code == OPCODE.ERR:
+            sys.stderr.write('Error code: %s. \n   Message: %s\n' % (ERROR_CODES[resp_blk_num], resp_data))
+            close_and_exit(pv.file_obj, pv.sock, -4)
 
 # le parser return arg0 = nom serveur , arg1 = port du serveur, arg2 = fichier destination
 def parser():
@@ -74,113 +166,6 @@ def parser():
         return AppRq.GET, parsed_arg.get[0], int(parsed_arg.get[1]), parsed_arg.get[2]
     elif parsed_arg.put:
         return AppRq.PUT, parsed_arg.put[0], int(parsed_arg.put[1]), parsed_arg.put[2]
-
-# -- receive file --.
-def receive_file(sock, fd, first_data_blk):
-    #on traite le premiere paquet et ACK
-    if first_data_blk:
-        fd.write(first_data_blk)
-        sock.send(build_packet_ack(1))
-    block_num_ack = 1
-
-    if len(first_data_blk) < MAX_PACKET_SIZE:
-        fd.close()
-        file_len = len(first_data_blk)
-        print '%d bytes recu.' % file_len
-        return True
-
-    else:
-        #loop du tftp reception donees.
-        done = 0
-
-        """
-            Si packet data OK send ACK au serveur;
-            Si erreur dans le packet ou timeout, exit et return erreur;
-        """
-
-        while done == 0:
-            attempt_number = 0
-            # reception des paquets msg
-            # receive avec timeout socket sinon resend ACK blk_num
-            while attempt_number < MAX_ATTEMPTS_NUMBER:
-                try:
-                    paquet = sock.recv(516)
-                    break
-                except socket.timeout:
-                    sock.send(build_packet_ack(block_num_ack))
-                    attempt_number += 1
-                    continue
-
-            #print "test", paquet
-            #Decode du msg avec paquet.py
-            opcode,blck_num, data = decode_packet(paquet)
-            #test OPCODE
-            if opcode == OPCODE.ERR:
-                print "Error", data
-                return False
-            elif opcode == OPCODE.DATA:
-                # il s'agit bien d'un paquet DATA.
-                if blck_num != block_num_ack+1:
-                    # skip unexpected #block data packet
-                    print 'unexpected block num', blck_num
-                    continue
-                fd.write(data)
-
-                sock.send(build_packet_ack(blck_num))
-                done = 0
-
-                if len(data) < MAX_PACKET_SIZE:
-                    #done = True
-                    fd.close()
-                    file_len = MAX_PACKET_SIZE * (block_num_ack) + len(data)
-                    print '%d bytes recu.' % file_len
-                    done = 1
-                    # dernier paquet set de DONE = 1
-
-            block_num_ack += 1
-
-    return True
-
-
-def send_file(sock, fd,):
-    """
-    :param socket_obj:
-    :param file_obj:
-    :return:
-    """
-    # loop du tftp reception donees.
-    done = 0
-    block_num = 0
-    block_num_ack = 0
-
-    """
-        Je recois les paquets et je send le ACK;
-        Si le ACK recu est mauvaise je re-send la data precedente ou timeout,
-    """
-    while done == 0 and block_num == block_num_ack:
-        block_num +=1
-        data = fd.read(MAX_PACKET_SIZE)
-        if len(data) < MAX_PACKET_SIZE:
-            done = 0
-
-        sock.send(build_packet_data(block_num, data))
-
-        attempt_number = 0
-        # reception des paquets msg
-        # receive avec timeout socket sinon resend ACK blk_num
-        while attempt_number < MAX_ATTEMPTS_NUMBER:
-            try:
-                ack = sock.recv(4)
-                opcode, block_num_ack = decode_packet(ack)
-                print opcode, block_num_ack
-                break
-            except socket.timeout:
-                sock.send(build_packet_data(block_num, data))
-                attempt_number += 1
-                continue
-
-    return True
-
 
 def close_and_exit(file_object, socket_obj, exit_code, filepath_to_delete = None):
     """ closes a file, a socket and exits the program with a given exit code
