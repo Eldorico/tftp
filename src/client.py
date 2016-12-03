@@ -23,6 +23,7 @@ class ProtocolVariables:
         self.state = None
         self.response_address = None
         self.response_packet = None
+        self.last_data_sent = None  
 
 
 def send_request(pv):
