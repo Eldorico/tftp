@@ -103,7 +103,8 @@ def state_wait_data(pv):
             pv.sock.send(build_packet_ack(resp_blk_num))
 
         if len(resp_data) < MAX_PACKET_SIZE:
-            pv.sock.send(build_packet_ack(pv.last_block_num))
+            pv.sock.send(build_packet_ack(resp_blk_num))
+            pv.last_block_num = resp_blk_num
             pv.state = STATES.WAIT_TERMINATION_TIMER_OUT
             return
 
