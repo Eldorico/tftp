@@ -68,6 +68,8 @@ def state_wait_wrq_ack(pv):
     # analyse answer
     resp_op_code, resp_blk_num, resp_data = decode_packet(pv.response_packet)
     if resp_op_code == OPCODE.ACK and resp_blk_num == 0:
+        destination_tid = pv.response_address[1]
+        pv.sock.connect((pv.host, destination_tid))
         data_to_send = pv.file_obj.read(MAX_PACKET_SIZE)
         pv.sock.send(build_packet_data(1, data_to_send))
         pv.last_data_sent = data_to_send
@@ -109,6 +111,8 @@ def state_wait_first_data(pv):
     # analyse answer
     resp_op_code, resp_blk_num, resp_data = decode_packet(pv.response_packet)
     if resp_op_code == OPCODE.DATA and resp_blk_num == 1:
+        destination_tid = pv.response_address[1]
+        pv.sock.connect((pv.host, destination_tid))
         pv.file_obj.write(resp_data)
         pv.sock.send(build_packet_ack(1))
         if len(resp_data) < MAX_PACKET_SIZE:
