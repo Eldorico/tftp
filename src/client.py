@@ -116,6 +116,7 @@ def state_wait_first_data(pv):
         pv.file_obj.write(resp_data)
         pv.sock.send(build_packet_ack(1))
         if len(resp_data) < MAX_PACKET_SIZE:
+            pv.last_block_num = resp_blk_num
             pv.state = STATES.WAIT_TERMINATION_TIMER_OUT
         else:
             pv.state = STATES.WAIT_DATA

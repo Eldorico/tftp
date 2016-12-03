@@ -63,7 +63,7 @@ def decode_packet(msg):
         return opcode, l[1], l[2]
     elif opcode == OPCODE.ACK:
         block_num = struct.unpack("!H", msg[2:])[0]
-        return opcode, block_num
+        return opcode, block_num, None
     elif opcode == OPCODE.DATA:
         block_num = struct.unpack("!H", msg[2:4])[0]
         data = msg[4:]

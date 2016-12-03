@@ -40,7 +40,7 @@ def state_wait_ack(pv):
     """
     while True:
         block_num +=1
-        data_next = pv.fileobj.read(MAX_PACKET_SIZE)
+        data_next = pv.file_obj.read(MAX_PACKET_SIZE)
 
         attempt_number = 0
         # reception des paquets ACK 1 --> penultimate ACK
@@ -53,14 +53,14 @@ def state_wait_ack(pv):
                     close_and_exit(pv.file_obj, pv.sock, -4)
                 break
             except socket.timeout:
-                pv.socksend(build_packet_data(pv.block_num, pv.data))
+                pv.sock.send(build_packet_data(pv.block_num, pv.data))
                 attempt_number += 1
                 continue
         if attempt_number == MAX_ATTEMPTS_NUMBER:
             sys.stderr.write('Failed to connect to host %s on port %d.\n   Timeout reached.\n' % (pv.host, pv.port))
             close_and_exit(pv.file_obj, pv.sock, -3)
 
-        pv.sock.send(build_packet_data(block_num, data_next))
+        pv.sock.send(build_packet_data(block_num, data_next))git
 
         if len(data_next) < MAX_PACKET_SIZE:
             # go the the STATE = LAST_ACK
@@ -101,14 +101,13 @@ def state_wait_data(pv):
                 continue
             pv.file_obj.write(resp_data)
             pv.sock.send(build_packet_ack(resp_blk_num))
+            block_num_ack += 1
 
         if len(resp_data) < MAX_PACKET_SIZE:
             pv.sock.send(build_packet_ack(resp_blk_num))
             pv.last_block_num = resp_blk_num
             pv.state = STATES.WAIT_TERMINATION_TIMER_OUT
             return
-
-    block_num_ack += 1
 
 
 def state_wait_last_ack(pv):
@@ -147,6 +146,8 @@ def state_wait_termination_timer_out(pv):
                 pv.sock.send(build_packet_ack(pv.last_block_num))
                 attempt_number += 1
                 continue
+            except socket.error:
+                close_and_exit(pv.file_obj, pv.sock, 0)
         if attempt_number == MAX_ATTEMPTS_NUMBER:
             #exit correctly
             close_and_exit(pv.file_obj, pv.sock, 0)
