@@ -18,12 +18,12 @@ class ProtocolVariables:
         self.filename = None
         self.file_obj = None
         self.request_packet = None
-        self.first_data_packet = None
         self.source_tid = None
         self.state = None
         self.response_address = None
         self.response_packet = None
-        self.last_data_sent = None  
+        self.last_data_sent = None
+        self.last_block_num = None
 
 
 def send_request(pv):
@@ -54,7 +54,7 @@ def state_wait_wrq_ack(pv):
     while attempt_number < MAX_ATTEMPTS_NUMBER:
         pv.sock.settimeout(TIMEOUT_IN_SECONDS)
         try:
-            pv.response_packet, pv.response_address = pv.sock.recvfrom(516)
+            pv.response_packet, pv.response_address = pv.sock.recvfrom(MAX_PACKET_SIZE+4)
             break
         except socket.timeout:
             attempt_number += 1
@@ -66,9 +66,15 @@ def state_wait_wrq_ack(pv):
         close_and_exit(pv.file_obj, pv.sock, -3)
 
     # analyse answer
-    resp_op_code, resp_blk_num = decode_packet(pv.response_packet)
+    resp_op_code, resp_blk_num, resp_data = decode_packet(pv.response_packet)
     if resp_op_code == OPCODE.ACK and resp_blk_num == 0:
-        pv.state = STATES.DEBUG_RECEIVE_OR_SEND
+        data_to_send = pv.file_obj.read(MAX_PACKET_SIZE)
+        pv.sock.send(build_packet_data(1, data_to_send))
+        pv.last_data_sent = data_to_send
+        if len(data_to_send) < MAX_PACKET_SIZE:
+            pv.state = STATES.WAIT_LAST_ACK
+        else:
+            pv.state = STATES.WAIT_ACK
         return
     elif resp_op_code == OPCODE.ERR:
         sys.stderr.write('Connexion refused with host %s on port %d.\n   Error code: %s. \n   Message: %s\n'%(pv.host, pv.port, ERROR_CODES[resp_blk_num], resp_data))
@@ -103,8 +109,12 @@ def state_wait_first_data(pv):
     # analyse answer
     resp_op_code, resp_blk_num, resp_data = decode_packet(pv.response_packet)
     if resp_op_code == OPCODE.DATA and resp_blk_num == 1:
-        pv.first_data_packet = resp_data
-        pv.state = STATES.DEBUG_RECEIVE_OR_SEND
+        pv.file_obj.write(resp_data)
+        pv.sock.send(build_packet_ack(1))
+        if len(resp_data) < MAX_PACKET_SIZE:
+            pv.state = STATES.WAIT_TERMINATION_TIMER_OUT
+        else:
+            pv.state = STATES.WAIT_DATA
         return
     elif resp_op_code == OPCODE.ERR:
         sys.stderr.write('Connexion refused with host %s on port %d.\n   Error code: %s. \n   Message: %s\n'%(pv.host, pv.port, ERROR_CODES[resp_blk_num], resp_data))
@@ -112,29 +122,6 @@ def state_wait_first_data(pv):
     else:
         sys.stderr.write('state_first_data() : An error occured')
         close_and_exit(pv.file_obj, pv.sock, -5, pv.filename)
-
-
-def debug_receive_or_send_file(pv):
-    """ temporary state function to execute send / receive file
-    :param pv:
-    :return:
-    """
-    # get or send file
-    destination_tid = pv.response_address[1]
-    pv.sock.connect((pv.host, destination_tid))
-    if pv.app_request == AppRq.GET:
-        task_done = receive_file(pv.sock, pv.file_obj, pv.first_data_packet)
-    else:
-        task_done = send_file(pv.sock, pv.file_obj)
-
-    # close and exit
-    if task_done:
-        close_and_exit(pv.file_obj, pv.sock, 0, None)
-    else:
-        if pv.app_request == AppRq.GET:
-            close_and_exit(pv.file_obj, pv.sock, 1, pv.filename)  # TODO: try to get the error code of ERR paquet from send or receive fonctions from Lerda
-        else:
-            close_and_exit(pv.file_obj, pv.sock, 1)  # TODO: try to get the error code of ERR paquet from send or receive fonctions from Lerda
 
 
 """  ------------------------------------  """
@@ -163,8 +150,6 @@ def exec_client_state(state):
         return state_wait_data(v)
     elif state == STATES.WAIT_TERMINATION_TIMER_OUT:
         return state_wait_termination_timer_out(v)
-    elif state == STATES.DEBUG_RECEIVE_OR_SEND:
-        return debug_receive_or_send_file(v)
 
 
 # parse input
