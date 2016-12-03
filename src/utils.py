@@ -115,7 +115,7 @@ def state_wait_last_ack(pv):
     # reception du last paquet
     while attempt_number < MAX_ATTEMPTS_NUMBER:
         try:
-            ack = pv.sock.recv()
+            ack = pv.sock.recv(MAX_PACKET_SIZE)
             op_code, resp_blk_num, resp_data = decode_packet(ack)
             if op_code == OPCODE.ERR:
                 sys.stderr.write('Error code: %s. \n   Message: %s\n' % (ERROR_CODES[resp_blk_num], resp_data))
