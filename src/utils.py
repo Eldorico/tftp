@@ -60,7 +60,7 @@ def state_wait_ack(pv):
             sys.stderr.write('Failed to connect to host %s on port %d.\n   Timeout reached.\n' % (pv.host, pv.port))
             close_and_exit(pv.file_obj, pv.sock, -3)
 
-        pv.sock.send(build_packet_data(block_num, data_next))git
+        pv.sock.send(build_packet_data(block_num, data_next))
 
         if len(data_next) < MAX_PACKET_SIZE:
             # go the the STATE = LAST_ACK
