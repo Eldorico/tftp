@@ -65,7 +65,7 @@ def state_wait_wrq_ack(pv):
         close_and_exit(pv.file_obj, pv.sock, -3)
 
     # analyse answer
-    resp_op_code, resp_blk_num, resp_data = decode_packet(pv.response_packet)
+    resp_op_code, resp_blk_num = decode_packet(pv.response_packet)
     if resp_op_code == OPCODE.ACK and resp_blk_num == 0:
         pv.state = STATES.DEBUG_RECEIVE_OR_SEND
         return
