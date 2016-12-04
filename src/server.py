@@ -16,7 +16,7 @@ class Server:
         self.sock = None
         self.client_ip = None
         # self.filename = None
-        # self.file_obj = None
+        self.file_obj = None
         # self.request_packet = None
         # self.first_data_packet = None
         self.source_tid = None
@@ -85,35 +85,44 @@ class Server:
             print resp_blk_num
             print resp_data
 
-
-            if resp_op_code == OPCODE.WRQ:
-                random_port = random.randint(10000, 60000)
-                block_num = 1
-                # block_num = 1?
-                self.sock.send(build_packet_ack(block_num))
-                self.source_tid = random.randint(10000, 60000)
-                # restart timer?
-                self.state = STATES.WAIT_DATA
-                return
-
-            elif resp_op_code == OPCODE.RRQ:
-                if len(resp_data) > MAX_PACKET_SIZE:
-                    #resp_data == filename + mode ?
-                    print "resp_data when RRQ data > 512 (if)"
-                    print resp_data
-                    self.sock.send(build_packet_wrq(resp_data))
+            try:
+                if resp_op_code == OPCODE.WRQ:
+                    random_port = random.randint(10000, 60000)
+                    block_num = 1
+                    # block_num = 1?
+                    self.sock.send(build_packet_ack(block_num))
                     self.source_tid = random.randint(10000, 60000)
-                    self.state = STATES.WAIT_LAST_ACK
-                    #start timer?
+                    # restart timer?
+                    self.state = STATES.WAIT_DATA
+                    return
 
-                else:
-                    print "resp_data when RRQ data <= 512 (else)"
-                    print resp_data
-                    self.sock.send(build_packet_wrq(resp_data))
-                    self.source_tid = random.randint(10000, 60000)
-                    self.state = STATES.WAIT_ACK
-                    #start timer?
-                return
+                elif resp_op_code == OPCODE.RRQ:
+                    if len(resp_data) > MAX_PACKET_SIZE:
+                        #resp_data == filename + mode ?
+                        print "resp_data when RRQ data > 512 (if)"
+                        print resp_data
+
+                        self.file_obj = open(resp_data, 'r')
+
+                        self.sock.send(build_packet_wrq(resp_data))
+                        self.source_tid = random.randint(10000, 60000)
+                        self.state = STATES.WAIT_LAST_ACK
+                        #start timer?
+                    else:
+                        print "resp_data when RRQ data <= 512 (else)"
+                        print resp_data
+
+                        self.file_obj = open(resp_data, 'r')
+
+                        self.sock.send(build_packet_wrq(resp_data))
+                        self.source_tid = random.randint(10000, 60000)
+                        self.state = STATES.WAIT_ACK
+                        #start timer?
+                    return
+
+            except:
+                close_and_exit(None, None, -1)
+
 
             # print data
             # print addr
