@@ -87,17 +87,32 @@ class Server:
 
 
             if resp_op_code == OPCODE.WRQ:
-                # envoyer ack de confirmation
-                self.sock.send(build_packet_ack(1))
+                random_port = random.randint(10000, 60000)
+                block_num = 1
+                # block_num = 1?
+                self.sock.send(build_packet_ack(block_num))
+                self.source_tid = random.randint(10000, 60000)
+                # restart timer?
                 self.state = STATES.WAIT_DATA
                 return
 
             elif resp_op_code == OPCODE.RRQ:
-                if len(resp_data) < MAX_PACKET_SIZE:
+                if len(resp_data) > MAX_PACKET_SIZE:
+                    #resp_data == filename + mode ?
+                    print "resp_data when RRQ data > 512 (if)"
+                    print resp_data
+                    self.sock.send(build_packet_wrq(resp_data))
+                    self.source_tid = random.randint(10000, 60000)
                     self.state = STATES.WAIT_LAST_ACK
-                else:
-                    self.state = STATES.WAIT_ACK
+                    #start timer?
 
+                else:
+                    print "resp_data when RRQ data <= 512 (else)"
+                    print resp_data
+                    self.sock.send(build_packet_wrq(resp_data))
+                    self.source_tid = random.randint(10000, 60000)
+                    self.state = STATES.WAIT_ACK
+                    #start timer?
                 return
 
             # print data
