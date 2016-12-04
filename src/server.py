@@ -110,22 +110,22 @@ class Server:
 
         self.sock.close()
 
-
-    def send_request(self):
-        """ Creates a socket in self and sends the self.request_paquet to self.host on self.port.
-        :param self: a ProtocolVariables object. should contain
-                a dest host,
-                a dest port,
-                a request_paquet that are not None
-        """
-        try:
-            self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            self.source_tid = random.randint(10000, 60000)
-            self.sock.bind(('', self.source_tid))
-            self.sock.sendto(self.request_packet, (self.host, self.port))
-        except socket.error, msg:
-            sys.stderr.write('Failed to send request: error Code : ' + str(msg[0]) + ' Message: ' + msg[1] + '\n')
-            close_and_exit(self.file_obj, self.sock, -2, self.filename if self.app_request == AppRq.GET else None)
+    #
+    # def send_request(self):
+    #     """ Creates a socket in self and sends the self.request_paquet to self.host on self.port.
+    #     :param self: a ProtocolVariables object. should contain
+    #             a dest host,
+    #             a dest port,
+    #             a request_paquet that are not None
+    #     """
+    #     try:
+    #         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    #         self.source_tid = random.randint(10000, 60000)
+    #         self.sock.bind(('', self.source_tid))
+    #         self.sock.sendto(self.request_packet, (self.host, self.port))
+    #     except socket.error, msg:
+    #         sys.stderr.write('Failed to send request: error Code : ' + str(msg[0]) + ' Message: ' + msg[1] + '\n')
+    #         close_and_exit(self.file_obj, self.sock, -2, self.filename if self.app_request == AppRq.GET else None)
 
 
 
