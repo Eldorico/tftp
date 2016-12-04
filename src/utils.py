@@ -32,6 +32,10 @@ MAX_ATTEMPTS_NUMBER = 4
 
 
 def state_wait_ack(pv):
+    """
+    :param pv: protocolVariable. A Client or Server Object
+    :return:
+    """
 
     block_num = 1
     """
@@ -70,6 +74,10 @@ def state_wait_ack(pv):
             return
 
 def state_wait_data(pv):
+    """
+    :param pv: protocolVariable. A Client or Server Object
+    :return:
+    """
 
     block_num_ack = 1
     while True:
@@ -111,6 +119,10 @@ def state_wait_data(pv):
 
 
 def state_wait_last_ack(pv):
+    """
+    :param pv: protocolVariable. A Client or Server Object
+    :return:
+    """
     attempt_number = 0
     # reception du last paquet
     while attempt_number < MAX_ATTEMPTS_NUMBER:
@@ -133,7 +145,10 @@ def state_wait_last_ack(pv):
 
 
 def state_wait_termination_timer_out(pv):
-
+    """
+    :param pv: protocolVariable. A Client or Server Object
+    :return:
+    """
     while True:
         attempt_number = 0
         # reception des paquets msg
@@ -157,17 +172,6 @@ def state_wait_termination_timer_out(pv):
             sys.stderr.write('Error code: %s. \n   Message: %s\n' % (ERROR_CODES[resp_blk_num], resp_data))
             close_and_exit(pv.file_obj, pv.sock, -4)
 
-# le parser return arg0 = nom serveur , arg1 = port du serveur, arg2 = fichier destination
-def parser():
-    parser = argparse.ArgumentParser(description='Tftp python.')
-    group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument('-get', help='get a file from server', nargs=3, metavar=('server', 'port', 'filename'))
-    group.add_argument('-put', help='send a file to server', nargs=3, metavar=('server', 'port', 'filename'))
-    parsed_arg = parser.parse_args()
-    if parsed_arg.get:
-        return AppRq.GET, parsed_arg.get[0], int(parsed_arg.get[1]), parsed_arg.get[2]
-    elif parsed_arg.put:
-        return AppRq.PUT, parsed_arg.put[0], int(parsed_arg.put[1]), parsed_arg.put[2]
 
 def close_and_exit(file_object, socket_obj, exit_code, filepath_to_delete = None):
     """ closes a file, a socket and exits the program with a given exit code
