@@ -33,7 +33,7 @@ def build_packet_wrq(filename, mode = DEFAULT_MODE):
 
 def build_packet_data(blocknr, data):
     return struct.pack("!HH", OPCODE.DATA, blocknr) + data
-
+#
 
 def build_packet_ack(blocknr):
     return struct.pack("!HH", OPCODE.ACK, blocknr)
