@@ -17,9 +17,11 @@ class Server:
         self.client_ip = None
         # self.filename = None
         self.file_obj = None
+        self.filename = None
         # self.request_packet = None
         # self.first_data_packet = None
         self.source_tid = None
+        self.destination_tid = None
         self.state = None
 
         self.response_address = None
@@ -75,64 +77,106 @@ class Server:
         # print 'Socket now listening'
 
         #now keep talking with the client
-        while True:
-            self.response_packet, self.response_address = self.sock.recvfrom(self.listen_port)
+        # while True:
+        self.response_packet, self.response_address = self.sock.recvfrom(self.listen_port)
+        self.destination_tid = self.response_address[1]
 
-            # analyse answer
-            resp_op_code, resp_blk_num, resp_data = decode_packet(self.response_packet)
-            # if resp_op_code == OPCODE.ACK and resp_blk_num == 0:
-            print resp_op_code
-            print resp_blk_num
-            print resp_data
+        print "" + str(self.response_address)
 
+        # analyse answer
+        resp_op_code, resp_filename, resp_blk_num = decode_packet(self.response_packet)
+
+        print "resp_op_code: "+ str(resp_op_code)
+        print "resp_blk_num: "+ str(resp_blk_num)
+        print "resp_filename: "+ str(resp_filename)
+
+        self.filename = resp_filename #Comment je get filename
+
+        self.sock.connect((self.listen_ip, self.destination_tid))
+
+        # WRQ REQUEST
+        if resp_op_code == OPCODE.WRQ:
             try:
-                if resp_op_code == OPCODE.WRQ:
-                    random_port = random.randint(10000, 60000)
-                    block_num = 1
-                    # block_num = 1?
-                    self.sock.send(build_packet_ack(block_num))
-                    self.source_tid = random.randint(10000, 60000)
-                    # restart timer?
-                    self.state = STATES.WAIT_DATA
-                    return
-
-                elif resp_op_code == OPCODE.RRQ:
-                    if len(resp_data) > MAX_PACKET_SIZE:
-                        #resp_data == filename + mode ?
-                        print "resp_data when RRQ data > 512 (if)"
-                        print resp_data
-
-                        self.file_obj = open(resp_data, 'r')
-
-                        self.sock.send(build_packet_wrq(resp_data))
-                        self.source_tid = random.randint(10000, 60000)
-                        self.state = STATES.WAIT_LAST_ACK
-                        #start timer?
-                    else:
-                        print "resp_data when RRQ data <= 512 (else)"
-                        print resp_data
-
-                        self.file_obj = open(resp_data, 'r')
-
-                        self.sock.send(build_packet_wrq(resp_data))
-                        self.source_tid = random.randint(10000, 60000)
-                        self.state = STATES.WAIT_ACK
-                        #start timer?
-                    return
-
-            except:
+                self.file_obj = open(self.directory+'/test.jpg', 'w')   #CHANGER FICHIER
+            except IOError, e:
+                sys.stderr.write("Can't create or erase file : ")
+                sys.stderr.write("%s\n" % str(e))
                 close_and_exit(None, None, -1)
 
 
-            # print data
-            # print addr
-            # s.sendto("output", addr)
+            random_port = random.randint(10000, 60000)
+            block_num = 0
 
-            # wait to accept a connection - blocking call
-            # conn, addr = self.sock.accept()
-            # print 'Connected with ' + addr[0] + ':' + str(addr[1])
+            self.source_tid = random.randint(10000, 60000)
 
-        self.sock.close()
+
+            #  si arrive ouvrir fichier ecriture faire dessous
+
+            self.sock.sendto(build_packet_ack(block_num), self.response_address)
+
+            self.state = STATES.WAIT_FIRST_DATA
+            return
+
+        # READ REQUEST ->  DEMANDE DU CLIENT POUR LIRE
+        elif resp_op_code == OPCODE.RRQ:
+            try:
+                self.file_obj = open(self.directory+'/'+self.filename, 'r')
+            except IOError, e:
+                sys.stderr.write("Can't open file : ")
+                sys.stderr.write("%s\n" % str(e))
+                close_and_exit(None, None, -1)
+
+            self.source_tid = random.randint(10000, 60000) #CHOOSE TID?
+            block_num = 1
+            data_to_send = self.file_obj.read(MAX_PACKET_SIZE)
+
+            if len(data_to_send) < MAX_PACKET_SIZE:
+                # random_port = random.randint(10000, 60000)  # RANDOM PORT?
+                self.sock.sendto(build_packet_data(block_num, data_to_send), self.response_address)
+                self.state = STATES.WAIT_LAST_ACK
+            else:
+                random_port = random.randint(10000, 60000)
+                self.sock.sendto(build_packet_data(block_num, data_to_send), self.response_address)
+                self.state = STATES.WAIT_ACK
+            return
+
+        # self.sock.close()
+
+                #
+                # if len(resp_data) > MAX_PACKET_SIZE:
+                #
+                #     #OUVRIR FICHIER EN LECTURE
+                #
+                #     #resp_data == filename + mode ?
+                #     print "resp_data when RRQ data > 512 (if)"
+                #     print resp_data
+                #
+                #     self.file_obj = open(resp_data, 'r')
+                #
+                #     self.sock.send(build_packet_data(resp_data))
+                #     self.source_tid = random.randint(10000, 60000)
+                #     self.state = STATES.WAIT_LAST_ACK
+                #     #start timer?
+                # else:
+                #     print "resp_data when RRQ data <= 512 (else)"
+                #     print resp_data
+                #
+                #     self.file_obj = open(resp_data, 'r')
+                #
+                #     self.sock.send(build_packet_data(resp_data))
+                #     self.source_tid = random.randint(10000, 60000)
+                #     self.state = STATES.WAIT_ACK
+                #     #start timer?
+                # return
+
+        # print data
+        # print addr
+        # s.sendto("output", addr)
+
+        # wait to accept a connection - blocking call
+        # conn, addr = self.sock.accept()
+        # print 'Connected with ' + addr[0] + ':' + str(addr[1])
+
 
     #
     # def send_request(self):
@@ -154,45 +198,47 @@ class Server:
 
 
 
-# instantiate variables used for the transfer
-# TIMEOUT_IN_SECONDS = 1
-# MAX_ATTEMPTS_NUMBER = 4
+    # instantiate variables used for the transfer
+    # TIMEOUT_IN_SECONDS = 1
+    # MAX_ATTEMPTS_NUMBER = 4
+
+    def exec_server_state(self, state):
+        """ function to executes all the states for the client. It uses the variables v instantiate just above
+        :param state: The state to execute: STATES(Enum)
+        """
+        # if state == STATES.WAIT_WRQ_ACK :
+        #     return state_wait_wrq_ack(v)
+        # if state == STATES.WAIT_FIRST_DATA:
+        #     s.listen()
+        if state == STATES.WAIT_ACK :
+            return state_wait_ack(self)
+        elif state == STATES.WAIT_LAST_ACK:
+            return state_wait_last_ack(self)
+        # elif state == STATES.WAIT_FIRST_DATA:
+        #     return state_wait_first_data(v)
+        elif state == STATES.WAIT_DATA:
+            return state_wait_data(self)
+        # elif state == STATES.WAIT_TERMINATION_TIMER_OUT:
+        #     return state_wait_termination_timer_out(v)
+        # elif state == STATES.DEBUG_RECEIVE_OR_SEND:
+        #     return debug_receive_or_send_file(v)
+
+
+
 s = Server()
-
-def exec_server_state(state):
-    """ function to executes all the states for the client. It uses the variables v instantiate just above
-    :param state: The state to execute: STATES(Enum)
-    """
-    # if state == STATES.WAIT_WRQ_ACK :
-    #     return state_wait_wrq_ack(v)
-    # if state == STATES.WAIT_FIRST_DATA:
-    #     s.listen()
-    if state == STATES.WAIT_ACK :
-        return state_wait_ack(s)
-    elif state == STATES.WAIT_LAST_ACK:
-        return state_wait_last_ack(s)
-    # elif state == STATES.WAIT_FIRST_DATA:
-    #     return state_wait_first_data(v)
-    elif state == STATES.WAIT_DATA:
-        return state_wait_data(s)
-    # elif state == STATES.WAIT_TERMINATION_TIMER_OUT:
-    #     return state_wait_termination_timer_out(v)
-    # elif state == STATES.DEBUG_RECEIVE_OR_SEND:
-    #     return debug_receive_or_send_file(v)
-
-
 # parse input
 s.listen_port, s.directory = s.parser()
 
 # listen
-try:
-    s.listen()
-except:
-    print "error listening port"
+# try:
+s.listen()
+# except:
+#     print "error listening port"
+#     close_and_exit(s.file_obj, s.sock, -5)
 
 # send request
 # send_request(v)
 
 # start state machine execution
 while True:
-    exec_server_state(s.state)
+    s.exec_server_state(s.state)

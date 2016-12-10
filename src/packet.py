@@ -33,7 +33,7 @@ def build_packet_wrq(filename, mode = DEFAULT_MODE):
 
 def build_packet_data(blocknr, data):
     return struct.pack("!HH", OPCODE.DATA, blocknr) + data
-#
+
 
 def build_packet_ack(blocknr):
     return struct.pack("!HH", OPCODE.ACK, blocknr)
@@ -55,7 +55,7 @@ def decode_packet(msg):
         l = msg[2:].split('\0')
         if len(l) != 3:
             return None
-        return opcode, l[1], l[2]
+        return opcode, l[0], l[1]
     elif opcode == OPCODE.WRQ:
         l = msg[2:].split('\0')
         if len(l) != 3:
