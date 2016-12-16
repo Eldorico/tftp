@@ -68,6 +68,7 @@ class Client:
             data_to_send = self.file_obj.read(MAX_PACKET_SIZE)
             self.sock.send(build_packet_data(1, data_to_send))
             self.last_data_sent = data_to_send
+            self.last_block_num = 1
             if len(data_to_send) < MAX_PACKET_SIZE:
                 self.state = STATES.WAIT_LAST_ACK
             else:

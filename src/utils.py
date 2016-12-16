@@ -57,7 +57,7 @@ def state_wait_ack(pv):
                     close_and_exit(pv.file_obj, pv.sock, -4)
                 break
             except socket.timeout:
-                pv.sock.send(build_packet_data(pv.block_num, pv.data))
+                pv.sock.send(build_packet_data(pv.last_block_num, pv.last_data_sent))
                 attempt_number += 1
                 continue
         if attempt_number == MAX_ATTEMPTS_NUMBER:
@@ -134,7 +134,8 @@ def state_wait_last_ack(pv):
                 close_and_exit(pv.file_obj, pv.sock, -4)
             break
         except socket.timeout:
-            pv.socksend(build_packet_data(pv.block_num, pv.data))
+            #print(pv.last_block_num, pv.last_data_sent)
+            pv.sock.send(build_packet_data(pv.last_block_num, pv.last_data_sent)) # TODO ICI asdf
             attempt_number += 1
             continue
     if attempt_number == MAX_ATTEMPTS_NUMBER:
@@ -195,9 +196,3 @@ def close_and_exit(file_object, socket_obj, exit_code, filepath_to_delete = None
 
     # exit program
     sys.exit(exit_code)
-
-
-
-
-
-
