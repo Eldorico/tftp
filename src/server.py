@@ -157,6 +157,12 @@ class Server:
 
             self.source_tid = random.randint(10000, 60000)
 
+            self.sock.close()
+
+            self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            self.sock.bind((self.listen_ip, self.source_tid))
+            self.sock.connect((self.listen_ip, self.destination_tid))
+
 
             #  si arrive ouvrir fichier ecriture faire dessous
 
@@ -174,7 +180,13 @@ class Server:
                 sys.stderr.write("%s\n" % str(e))
                 close_and_exit(None, None, -1)
 
-            self.source_tid = random.randint(10000, 60000) #CHOOSE TID?
+            self.source_tid = random.randint(10000, 60000)
+            self.sock.close()
+
+            self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            self.sock.bind((self.listen_ip, self.source_tid))
+            self.sock.connect((self.listen_ip, self.destination_tid))
+
             block_num = 1
             data_to_send = self.file_obj.read(MAX_PACKET_SIZE)
 

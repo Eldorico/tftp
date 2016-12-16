@@ -146,8 +146,6 @@ def state_wait_last_ack(pv, is_server = False):
         close_and_exit(pv.file_obj, pv.sock, 0, None, is_server)
 
     if is_server:
-        print("alert antoinette")
-        pv.sock.shutdown(socket.SHUT_RDWR)
         pv.sock.close()
         pv.state = STATES.LISTEN
         return
