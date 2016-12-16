@@ -55,12 +55,12 @@ def decode_packet(msg):
         l = msg[2:].split('\0')
         if len(l) != 3:
             return None
-        return opcode, l[0], l[1]
+        return opcode, l[1], l[0]
     elif opcode == OPCODE.WRQ:
         l = msg[2:].split('\0')
         if len(l) != 3:
             return None
-        return opcode, l[1], l[2]
+        return opcode, l[1], l[0]
     elif opcode == OPCODE.ACK:
         block_num = struct.unpack("!H", msg[2:])[0]
         return opcode, block_num, None

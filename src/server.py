@@ -84,7 +84,7 @@ class Server:
         print "" + str(self.response_address)
 
         # analyse answer
-        resp_op_code, resp_filename, resp_blk_num = decode_packet(self.response_packet)
+        resp_op_code, resp_blk_num, resp_filename = decode_packet(self.response_packet)
 
         print "resp_op_code: "+ str(resp_op_code)
         print "resp_blk_num: "+ str(resp_blk_num)
@@ -97,7 +97,7 @@ class Server:
         # WRQ REQUEST
         if resp_op_code == OPCODE.WRQ:
             try:
-                self.file_obj = open(self.directory+'/test.jpg', 'w')   #CHANGER FICHIER
+                self.file_obj = open(self.directory+'/'+self.filename, 'w')   #CHANGER FICHIER
             except IOError, e:
                 sys.stderr.write("Can't create or erase file : ")
                 sys.stderr.write("%s\n" % str(e))
