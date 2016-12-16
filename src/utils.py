@@ -146,6 +146,7 @@ def state_wait_last_ack(pv, is_server = False):
         close_and_exit(pv.file_obj, pv.sock, 0, None, is_server)
 
     if is_server:
+        pv.sock.shutdown(socket.SHUT_RDWR)
         pv.sock.close()
         pv.state = STATES.LISTEN
         return
@@ -185,6 +186,8 @@ def state_wait_termination_timer_out(pv, is_server = False):
             close_and_exit(pv.file_obj, pv.sock, -4, None, is_server)
 
         if is_server:
+            pv.sock.shutdown(socket.SHUT_RDWR)
+            pv.sock.close()
             pv.state = STATES.LISTEN
             return
 
