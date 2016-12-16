@@ -119,7 +119,7 @@ def state_wait_data(pv):
             return
 
 
-def state_wait_last_ack(pv):
+def state_wait_last_ack(pv, is_server = False):
     """
     :param pv: protocolVariable. A Client or Server Object
     :return:
@@ -132,7 +132,7 @@ def state_wait_last_ack(pv):
             op_code, resp_blk_num, resp_data = decode_packet(ack)
             if op_code == OPCODE.ERR:
                 sys.stderr.write('Error code: %s. \n   Message: %s\n' % (ERROR_CODES[resp_blk_num], resp_data))
-                close_and_exit(pv.file_obj, pv.sock, -4)
+                close_and_exit(pv.file_obj, pv.sock, -4, None, is_server)
             break
         except socket.timeout:
             #print(pv.last_block_num, pv.last_data_sent)
@@ -141,10 +141,16 @@ def state_wait_last_ack(pv):
             continue
     if attempt_number == MAX_ATTEMPTS_NUMBER:
         sys.stderr.write('Failed to connect to host %s on port %d.\n   Timeout reached.\n' % (pv.host, pv.port))
-        close_and_exit(pv.file_obj, pv.sock, -3)
+        close_and_exit(pv.file_obj, pv.sock, -3, None, is_server)
     else :
-        close_and_exit(pv.file_obj, pv.sock, 0)
+        close_and_exit(pv.file_obj, pv.sock, 0, None, is_server)
 
+    if is_server:
+        print("alert antoinette")
+        pv.sock.shutdown(socket.SHUT_RDWR)
+        pv.sock.close()
+        pv.state = STATES.LISTEN
+        return
 
 def state_wait_termination_timer_out(pv, is_server = False):
     """

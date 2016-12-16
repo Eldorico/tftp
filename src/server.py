@@ -261,7 +261,7 @@ class Server:
         if state == STATES.WAIT_ACK :
             return state_wait_ack(self)
         elif state == STATES.WAIT_LAST_ACK:
-            return state_wait_last_ack(self)
+            return state_wait_last_ack(self, True)
         # elif state == STATES.WAIT_FIRST_DATA:
         #     return state_wait_first_data(v)
         elif state == STATES.WAIT_DATA:
