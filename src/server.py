@@ -266,8 +266,8 @@ class Server:
         #     return state_wait_first_data(v)
         elif state == STATES.WAIT_DATA:
             return state_wait_data(self)
-        # elif state == STATES.WAIT_TERMINATION_TIMER_OUT:
-        #     return state_wait_termination_timer_out(v)
+        elif state == STATES.WAIT_TERMINATION_TIMER_OUT:
+            return state_wait_termination_timer_out(self)
         # elif state == STATES.DEBUG_RECEIVE_OR_SEND:
         #     return debug_receive_or_send_file(v)
 
