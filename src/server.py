@@ -43,6 +43,54 @@ class Server:
         return int(parsed_arg.port), parsed_arg.directory
 
 
+    def state_wait_first_data(self):
+        """ function corresponding to the wait_wrq_ack state.
+            globally, it waits for a the first data packet. If it gets it, we can then pass to the wait_data state.
+        :param self: the variables used for the transfer.
+        :return:
+        """
+        # get an answer or restart loop
+
+        TIMEOUT_IN_SECONDS = 1
+
+        attempt_number = 0
+        while attempt_number < MAX_ATTEMPTS_NUMBER:
+            self.sock.settimeout(TIMEOUT_IN_SECONDS)
+            try:
+                self.response_packet, self.response_address = self.sock.recvfrom(516)
+                break
+            except socket.timeout:
+                attempt_number += 1
+                # self.sock.close()
+
+                self.sock.sendto(build_packet_ack(0), self.response_address)
+                # self.send_request()
+                continue
+        if attempt_number == MAX_ATTEMPTS_NUMBER:
+            sys.stderr.write('Failed to connect to host %s on port %d.\n   Timeout reached.\n' % (self.host, self.port))
+            close_and_exit(self.file_obj, self.sock, -3, self.filename)
+
+        # analyse answer
+        resp_op_code, resp_blk_num, resp_data = decode_packet(self.response_packet)
+        if resp_op_code == OPCODE.DATA and resp_blk_num == 1:
+            destination_tid = self.response_address[1]
+            self.sock.connect((self.host, destination_tid))
+            self.file_obj.write(resp_data)
+            self.sock.send(build_packet_ack(1))
+            if len(resp_data) < MAX_PACKET_SIZE:
+                self.last_block_num = resp_blk_num
+                self.state = STATES.WAIT_TERMINATION_TIMER_OUT
+            else:
+                self.state = STATES.WAIT_DATA
+            return
+        elif resp_op_code == OPCODE.ERR:
+            sys.stderr.write('Connexion refused with host %s on port %d.\n   Error code: %s. \n   Message: %s\n' % (
+            self.host, self.port, ERROR_CODES[resp_blk_num], resp_data))
+            close_and_exit(self.file_obj, self.sock, -4)
+        else:
+            sys.stderr.write('state_first_data() : An error occured')
+            close_and_exit(self.file_obj, self.sock, -5, self.filename)
+
     def listen(self):
         """Start a server listening on the supplied interface and port. This
         defaults to INADDR_ANY (all interfaces) and UDP port 69. You can also
@@ -104,7 +152,7 @@ class Server:
                 close_and_exit(None, None, -1)
 
 
-            random_port = random.randint(10000, 60000)
+            # random_port = random.randint(10000, 60000)
             block_num = 0
 
             self.source_tid = random.randint(10000, 60000)
@@ -208,8 +256,8 @@ class Server:
         """
         # if state == STATES.WAIT_WRQ_ACK :
         #     return state_wait_wrq_ack(v)
-        # if state == STATES.WAIT_FIRST_DATA:
-        #     s.listen()
+        if state == STATES.WAIT_FIRST_DATA:
+            s.state_wait_first_data(self)
         if state == STATES.WAIT_ACK :
             return state_wait_ack(self)
         elif state == STATES.WAIT_LAST_ACK:
