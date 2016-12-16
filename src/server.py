@@ -74,7 +74,7 @@ class Server:
         resp_op_code, resp_blk_num, resp_data = decode_packet(self.response_packet)
         if resp_op_code == OPCODE.DATA and resp_blk_num == 1:
             destination_tid = self.response_address[1]
-            self.sock.connect((self.host, destination_tid))
+            self.sock.connect((self.listen_ip, destination_tid))
             self.file_obj.write(resp_data)
             self.sock.send(build_packet_ack(1))
             if len(resp_data) < MAX_PACKET_SIZE:
@@ -257,7 +257,7 @@ class Server:
         # if state == STATES.WAIT_WRQ_ACK :
         #     return state_wait_wrq_ack(v)
         if state == STATES.WAIT_FIRST_DATA:
-            s.state_wait_first_data(self)
+            return self.state_wait_first_data()
         if state == STATES.WAIT_ACK :
             return state_wait_ack(self)
         elif state == STATES.WAIT_LAST_ACK:
