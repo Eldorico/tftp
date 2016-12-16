@@ -21,6 +21,7 @@ class STATES(Enum):
     WAIT_DATA = 5
     WAIT_TERMINATION_TIMER_OUT = 6
     DEBUG_RECEIVE_OR_SEND = 7
+    LISTEN = 8
 
 
 class AppRq(Enum):
@@ -145,7 +146,7 @@ def state_wait_last_ack(pv):
         close_and_exit(pv.file_obj, pv.sock, 0)
 
 
-def state_wait_termination_timer_out(pv):
+def state_wait_termination_timer_out(pv, is_server = False):
     """
     :param pv: protocolVariable. A Client or Server Object
     :return:
@@ -159,22 +160,32 @@ def state_wait_termination_timer_out(pv):
                 paquet = pv.sock.recv(516)
                 break
             except socket.timeout:
-                pv.sock.send(build_packet_ack(pv.last_block_num))
+                try:
+                    pv.sock.send(build_packet_ack(pv.last_block_num))
+                except:
+                    if is_server:
+                        pv.state = STATES.LISTEN
+                        return
+
                 attempt_number += 1
                 continue
             except socket.error:
-                close_and_exit(pv.file_obj, pv.sock, 0)
+                close_and_exit(pv.file_obj, pv.sock, 0, None, is_server)
         if attempt_number == MAX_ATTEMPTS_NUMBER:
             #exit correctly
-            close_and_exit(pv.file_obj, pv.sock, 0)
+            close_and_exit(pv.file_obj, pv.sock, 0, None, is_server)
         #Decode du msg avec paquet.py
         op_code, resp_blk_num, resp_data = decode_packet(paquet)
         if op_code == OPCODE.ERR:
             sys.stderr.write('Error code: %s. \n   Message: %s\n' % (ERROR_CODES[resp_blk_num], resp_data))
-            close_and_exit(pv.file_obj, pv.sock, -4)
+            close_and_exit(pv.file_obj, pv.sock, -4, None, is_server)
+
+        if is_server:
+            pv.state = STATES.LISTEN
+            return
 
 
-def close_and_exit(file_object, socket_obj, exit_code, filepath_to_delete = None):
+def close_and_exit(file_object, socket_obj, exit_code, filepath_to_delete = None, is_server = False):
     """ closes a file, a socket and exits the program with a given exit code
     :param file_object:  the file object to close
     :param socket_obj: the socket object to close
@@ -194,5 +205,6 @@ def close_and_exit(file_object, socket_obj, exit_code, filepath_to_delete = None
     except Exception:
         pass
 
-    # exit program
-    sys.exit(exit_code)
+    if not is_server:
+        # exit program
+        sys.exit(exit_code)

@@ -267,7 +267,9 @@ class Server:
         elif state == STATES.WAIT_DATA:
             return state_wait_data(self)
         elif state == STATES.WAIT_TERMINATION_TIMER_OUT:
-            return state_wait_termination_timer_out(self)
+            return state_wait_termination_timer_out(self, True)
+        elif state == STATES.LISTEN:
+            return self.listen()
         # elif state == STATES.DEBUG_RECEIVE_OR_SEND:
         #     return debug_receive_or_send_file(v)
 
@@ -278,9 +280,9 @@ s = Server()
 s.listen_port, s.directory = s.parser()
 
 # listen
-# try:
-s.listen()
-# except:
+s.state = STATES.LISTEN
+
+
 #     print "error listening port"
 #     close_and_exit(s.file_obj, s.sock, -5)
 
