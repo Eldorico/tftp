@@ -136,7 +136,7 @@ def state_wait_last_ack(pv, is_server = False):
             break
         except socket.timeout:
             #print(pv.last_block_num, pv.last_data_sent)
-            pv.sock.send(build_packet_data(pv.last_block_num, pv.last_data_sent)) # TODO ICI asdf
+            pv.sock.send(build_packet_data(pv.last_block_num, pv.last_data_sent))
             attempt_number += 1
             continue
     if attempt_number == MAX_ATTEMPTS_NUMBER:
