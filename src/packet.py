@@ -1,5 +1,11 @@
-#! /usr/bin/python
 # -*- coding: utf-8 -*-
+
+__title__ = "packet.py"
+__description__ = "This module implements the packet types of TFTP itself, and the corresponding encode and decode methods for them."
+__author__ = "Federico Lerda, Kevin Estalella, and Federico Pfeiffer"
+__version__ = "1.0.0"
+
+
 from aenum import enum
 import struct
 
@@ -41,14 +47,12 @@ def build_packet_ack(blocknr):
 
 def build_packet_err(errcode):
     return struct.pack("!HH", OPCODE.ERR, errcode) + ERROR_CODES[errcode] + "\0"
-    # return struct.pack("!HH", OPCODE.ERR, errcode) + errmsg + "\0" #initial
 
 
 def decode_packet(msg):
     """
-    Cette fonction  permet de recevoir un packet ou la premiere valeure
-    est le OPCODE au format entier et les valeur suivantes sont les donnees des autres
-    parametres du paquets.
+    This function is used to decode a received packet where the first parameter
+    is the OPCODE in the integer format and the values are the data of the others Packet parameters.
     """
     opcode = struct.unpack("!H", msg[:2])[0]
     if opcode == OPCODE.RRQ:
