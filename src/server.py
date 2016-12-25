@@ -117,6 +117,13 @@ class Server:
         self.sock.connect((self.response_address[0], self.destination_tid))
         self.nb_paquets_lost = 0
 
+        self.source_tid = random.randint(10000, 60000)
+        self.sock.close()
+
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.sock.bind((self.listen_ip, self.source_tid))
+        self.sock.connect((self.response_address[0], self.destination_tid))
+
         # WRQ REQUEST - Client ask to write a file
         if resp_op_code == OPCODE.WRQ:
             try:
@@ -125,17 +132,13 @@ class Server:
             except IOError, e:
                 sys.stderr.write("Can't create or erase file : ")
                 sys.stderr.write("%s\n" % str(e))
-                close_and_exit(None, None, -1)
+                self.sock.send(build_packet_err(2))
+                self.sock.shutdown(socket.SHUT_RDWR)
+                self.sock.close()
+                self.state = STATES.LISTEN
+                close_and_exit(None, None, -1, None, True)
 
             block_num = 0
-
-            self.source_tid = random.randint(10000, 60000)
-
-            self.sock.close()
-
-            self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            self.sock.bind((self.listen_ip, self.source_tid))
-            self.sock.connect((self.response_address[0], self.destination_tid))
 
             # create and send ack packet
             self.sock.sendto(build_packet_ack(block_num), self.response_address)
@@ -150,14 +153,12 @@ class Server:
             except IOError, e:
                 sys.stderr.write("Can't open file : ")
                 sys.stderr.write("%s\n" % str(e))
-                close_and_exit(None, None, -1)
-
-            self.source_tid = random.randint(10000, 60000)
-            self.sock.close()
-
-            self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            self.sock.bind((self.listen_ip, self.source_tid))
-            self.sock.connect((self.response_address[0], self.destination_tid))
+                self.sock.send(build_packet_err(1))
+                self.sock.shutdown(socket.SHUT_RDWR)
+                self.sock.close()
+                self.state = STATES.LISTEN
+                close_and_exit(None, None, -1, None, True)
+                return
 
             block_num = 1
             data_to_send = self.file_obj.read(MAX_PACKET_SIZE)
