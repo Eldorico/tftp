@@ -73,7 +73,7 @@ class Server:
         resp_op_code, resp_blk_num, resp_data = decode_packet(self.response_packet)
         if resp_op_code == OPCODE.DATA and resp_blk_num == 1:
             destination_tid = self.response_address[1]
-            self.sock.connect((self.listen_ip, destination_tid))
+            self.sock.connect((self.response_address[0], destination_tid))
             self.file_obj.write(resp_data)
             self.sock.send(build_packet_ack(1))
             if len(resp_data) < MAX_PACKET_SIZE:
@@ -135,7 +135,7 @@ class Server:
 
             self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             self.sock.bind((self.listen_ip, self.source_tid))
-            self.sock.connect((self.listen_ip, self.destination_tid))
+            self.sock.connect((self.response_address[0], self.destination_tid))
 
             # create and send ack packet
             self.sock.sendto(build_packet_ack(block_num), self.response_address)
@@ -157,7 +157,7 @@ class Server:
 
             self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             self.sock.bind((self.listen_ip, self.source_tid))
-            self.sock.connect((self.listen_ip, self.destination_tid))
+            self.sock.connect((self.response_address[0], self.destination_tid))
 
             block_num = 1
             data_to_send = self.file_obj.read(MAX_PACKET_SIZE)
