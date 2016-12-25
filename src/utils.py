@@ -38,13 +38,12 @@ def state_wait_ack(pv):
     :return:
     """
 
-    block_num = 1
+    pv.last_block_num = 1
     """
         Je recois les paquets et je send le ACK;
         Si le ACK recu est mauvaise je re-send la data precedente ou timeout,
     """
     while True:
-        block_num +=1
         data_next = pv.file_obj.read(MAX_PACKET_SIZE)
 
         attempt_number = 0
@@ -56,7 +55,11 @@ def state_wait_ack(pv):
                 if op_code == OPCODE.ERR:
                     sys.stderr.write('Error code: %s. \n   Message: %s\n' % (ERROR_CODES[resp_blk_num], resp_data))
                     close_and_exit(pv.file_obj, pv.sock, -4)
-                break
+                elif resp_blk_num == pv.last_block_num:
+                    pv.last_block_num +=1
+                    break
+                else:
+                    continue
             except socket.timeout:
                 pv.sock.send(build_packet_data(pv.last_block_num, pv.last_data_sent))
                 attempt_number += 1
@@ -66,12 +69,11 @@ def state_wait_ack(pv):
             sys.stderr.write('Failed to connect to host %s on port %d.\n   Timeout reached.\n' % (pv.host, pv.port))
             close_and_exit(pv.file_obj, pv.sock, -3)
 
-        pv.sock.send(build_packet_data(block_num, data_next))
+        pv.sock.send(build_packet_data(pv.last_block_num, data_next))
 
         if len(data_next) < MAX_PACKET_SIZE:
             # go the the STATE = LAST_ACK
             pv.last_data_sent = data_next
-            pv.last_block_num = block_num
             pv.state = STATES.WAIT_LAST_ACK
             return
 
