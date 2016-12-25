@@ -60,6 +60,7 @@ def state_wait_ack(pv):
             except socket.timeout:
                 pv.sock.send(build_packet_data(pv.last_block_num, pv.last_data_sent))
                 attempt_number += 1
+                pv.nb_paquets_lost += 1
                 continue
         if attempt_number == MAX_ATTEMPTS_NUMBER:
             sys.stderr.write('Failed to connect to host %s on port %d.\n   Timeout reached.\n' % (pv.host, pv.port))
@@ -92,6 +93,7 @@ def state_wait_data(pv):
             except socket.timeout:
                 pv.sock.send(build_packet_ack(block_num_ack))
                 attempt_number += 1
+                pv.nb_paquets_lost += 1
                 continue
         if attempt_number == MAX_ATTEMPTS_NUMBER:
             sys.stderr.write('Failed to connect to host %s on port %d.\n   Timeout reached.\n' % (pv.host, pv.port))
@@ -132,17 +134,21 @@ def state_wait_last_ack(pv, is_server = False):
             op_code, resp_blk_num, resp_data = decode_packet(ack)
             if op_code == OPCODE.ERR:
                 sys.stderr.write('Error code: %s. \n   Message: %s\n' % (ERROR_CODES[resp_blk_num], resp_data))
+                print("Nb packets lost: %d. Efficienty: %f"%( pv.nb_paquets_lost, float(pv.last_block_num) / float(pv.last_block_num+pv.nb_paquets_lost)))
                 close_and_exit(pv.file_obj, pv.sock, -4, None, is_server)
             break
         except socket.timeout:
             #print(pv.last_block_num, pv.last_data_sent)
             pv.sock.send(build_packet_data(pv.last_block_num, pv.last_data_sent))
             attempt_number += 1
+            pv.nb_paquets_lost += 1
             continue
     if attempt_number == MAX_ATTEMPTS_NUMBER:
         sys.stderr.write('Failed to connect to host %s on port %d.\n   Timeout reached.\n' % (pv.host, pv.port))
+        print("Nb packets lost: %d. Efficienty: %f"%( pv.nb_paquets_lost, float(pv.last_block_num) / float(pv.last_block_num+pv.nb_paquets_lost)))
         close_and_exit(pv.file_obj, pv.sock, -3, None, is_server)
     else :
+        print("Nb packets lost: %d. Efficienty: %f"%( pv.nb_paquets_lost, float(pv.last_block_num) / float(pv.last_block_num+pv.nb_paquets_lost)))
         close_and_exit(pv.file_obj, pv.sock, 0, None, is_server)
 
     if is_server:
@@ -173,16 +179,20 @@ def state_wait_termination_timer_out(pv, is_server = False):
                         return
 
                 attempt_number += 1
+                pv.nb_paquets_lost += 1
                 continue
             except socket.error:
+                print("Nb packets lost: %d. Efficienty: %f"%( pv.nb_paquets_lost, float(pv.last_block_num) / float(pv.last_block_num+pv.nb_paquets_lost)))
                 close_and_exit(pv.file_obj, pv.sock, 0, None, is_server)
         if attempt_number == MAX_ATTEMPTS_NUMBER:
             #exit correctly
+            print("Nb packets lost: %d. Efficienty: %f"%( pv.nb_paquets_lost, float(pv.last_block_num) / float(pv.last_block_num+pv.nb_paquets_lost)))
             close_and_exit(pv.file_obj, pv.sock, 0, None, is_server)
         #Decode du msg avec paquet.py
         op_code, resp_blk_num, resp_data = decode_packet(paquet)
         if op_code == OPCODE.ERR:
             sys.stderr.write('Error code: %s. \n   Message: %s\n' % (ERROR_CODES[resp_blk_num], resp_data))
+            print("Nb packets lost: %d. Efficienty: %f"%( pv.nb_paquets_lost, float(pv.last_block_num) / float(pv.last_block_num+pv.nb_paquets_lost)))
             close_and_exit(pv.file_obj, pv.sock, -4, None, is_server)
 
         if is_server:
@@ -193,7 +203,7 @@ def state_wait_termination_timer_out(pv, is_server = False):
 
 
 def close_and_exit(file_object, socket_obj, exit_code, filepath_to_delete = None, is_server = False):
-    """ closes a file, a socket and exits the program with a given exit code
+    """ closes a file, a socket and exits the program with a given exit code (unless is_server is True)
     :param file_object:  the file object to close
     :param socket_obj: the socket object to close
     :param exit_code:

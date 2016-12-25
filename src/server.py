@@ -25,6 +25,7 @@ class Server:
         self.state = None
         self.response_address = None
         self.response_packet = None
+        self.nb_paquets_lost = 0
 
 
     def parser(self):
@@ -62,6 +63,7 @@ class Server:
             except socket.timeout:
                 attempt_number += 1
                 self.sock.sendto(build_packet_ack(0), self.response_address)
+                self.nb_paquets_lost += 1
                 continue
         if attempt_number == MAX_ATTEMPTS_NUMBER:
             sys.stderr.write('Failed to connect to host %s on port %d.\n   Timeout reached.\n' % (self.host, self.port))
@@ -113,6 +115,7 @@ class Server:
         self.filename = resp_filename #Comment je get filename
 
         self.sock.connect((self.listen_ip, self.destination_tid))
+        self.nb_paquets_lost = 0
 
         # WRQ REQUEST - Client ask to write a file
         if resp_op_code == OPCODE.WRQ:

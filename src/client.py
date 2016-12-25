@@ -21,6 +21,7 @@ class Client:
         self.response_packet = None
         self.last_data_sent = None
         self.last_block_num = None
+        self.nb_paquets_lost = 0
 
     def send_request(self):
         """ Creates a socket in self and sends the self.request_paquet to self.host on self.port.
@@ -53,6 +54,7 @@ class Client:
                 break
             except socket.timeout:
                 attempt_number += 1
+                self.nb_paquets_lost += 1
                 self.sock.close()
                 self.send_request()
                 continue
