@@ -114,7 +114,7 @@ class Server:
 
         self.filename = resp_filename #Comment je get filename
 
-        self.sock.connect((self.listen_ip, self.destination_tid))
+        self.sock.connect((self.response_address[0], self.destination_tid))
         self.nb_paquets_lost = 0
 
         # WRQ REQUEST - Client ask to write a file
