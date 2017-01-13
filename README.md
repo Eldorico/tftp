@@ -28,7 +28,7 @@ python src/server.py -p port -d repertoireAUtiliser
 
 ### Sortie
 
-Exemple de sortie en lançant le serveur d'abord, puis en effectuant deux requêtes client d'afilée. 
+Exemple de sortie en lançant le serveur d'abord, puis en effectuant deux requêtes client d'affilée. 
 
 Serveur:
 
@@ -85,7 +85,7 @@ Le script effectue la chose suivante:
 
    ![5_upload_local_end](./captures/5_upload_local_end.png)
 
-5. Supression du fichier 7777k récupéré auprès de hepia.infolibre  _(pour être sûr de faire ensuite le checksum du bon fichier)_
+5. Suppression du fichier 7777k récupéré auprès de hepia.infolibre  _(pour être sûr de faire ensuite le checksum du bon fichier)_
 
 6. Téléchargement du fichier 7777k depuis le serveur local
 
