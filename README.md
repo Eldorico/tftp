@@ -51,6 +51,8 @@ Nb packets lost: 1. Efficienty: 0.999935
 
 ## Test du client / serveur
 
+### Déroulement du test
+
 Afin de tester les programmes, un sript __test.sh__ est lancé avec la commande: 
 
 ```bash
@@ -121,3 +123,38 @@ stoping server
 removing files
 ```
 
+### Vérification du changement de port
+
+A travers wireshark surveillant l'interface locale, nous avons également vérifié que notre serveur notre client changent bien de port une fois la connexion initialisée:
+
+#### Connexion avec PUT Request
+
+Le client envoie sur le port 69.
+
+![8_verif_port_1](./captures/8_verif_port_1.png)
+
+Le serveur répond en ayant changé de port
+
+![8_verif_port_2](./captures/8_verif_port_2.png)
+
+Le client continue la connexion sur le nouveau port
+
+![8_verif_port_3](./captures/8_verif_port_3.png)
+
+#### Multiples GET request
+
+Lorsque le serveur met un peu de temps à répondre, on peut confirmer que le client tente une requête avec un nouveau port à chaque tentative:
+
+![9_verif_port_1](./captures/9_verif_port_1.png)
+
+![9_verif_port_2](./captures/9_verif_port_2.png)
+
+#### Connexion avec GET request
+
+Enfin, nous vérifions que le changement de port se fasse correctement avec les Get Request. 
+
+![9_verif_port_3](./captures/9_verif_port_3.png)
+
+![9_verif_port_4](./captures/9_verif_port_4.png)
+
+![9_verif_port_5](./captures/9_verif_port_5.png)

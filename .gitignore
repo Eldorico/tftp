@@ -1,5 +1,4 @@
 *.pyc
-README.pdf
 .idea/
 *.aux
 *.log
