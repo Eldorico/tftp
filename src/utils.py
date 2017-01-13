@@ -65,6 +65,9 @@ def state_wait_ack(pv):
                 attempt_number += 1
                 pv.nb_paquets_lost += 1
                 continue
+            except:
+                print("Connection error")
+                close_and_exit(pv.file_obj, pv.sock, -3)
         if attempt_number == MAX_ATTEMPTS_NUMBER:
             sys.stderr.write('Failed to connect to host %s on port %d.\n   Timeout reached.\n' % (pv.host, pv.port))
             close_and_exit(pv.file_obj, pv.sock, -3)
@@ -97,6 +100,10 @@ def state_wait_data(pv):
                 attempt_number += 1
                 pv.nb_paquets_lost += 1
                 continue
+            except :
+                print("connection error")
+                close_and_exit(pv.file_obj, pv.sock, -3, pv.filename)
+
         if attempt_number == MAX_ATTEMPTS_NUMBER:
             sys.stderr.write('Failed to connect to host %s on port %d.\n   Timeout reached.\n' % (pv.host, pv.port))
             close_and_exit(pv.file_obj, pv.sock, -3, pv.filename)
