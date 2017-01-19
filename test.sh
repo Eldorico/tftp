@@ -1,8 +1,11 @@
 #!/bin/sh
 fileName="test7777k"
-serverPort="69"
+serverPort="8888"
 host="localhost"
 serverDirectory="serverFiles"
+
+echo md5 sums should be: 
+echo a60814a887e267e2412c268c549be5c0
 
 echo downloading $fileName from hepia.infolibre.ch... This will take 5 minutes
 python src/client.py -get hepia.infolibre.ch 69 $fileName

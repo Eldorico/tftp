@@ -56,10 +56,10 @@ Nb packets lost: 1. Efficienty: 0.999935
 Afin de tester les programmes, un sript __test.sh__ est lancé avec la commande: 
 
 ```bash
-sudo bash test.sh
+bash test.sh
 ```
 
-Il peut être lancé sans les droits admin si l'on indique un autre numéro de port que 69 dans le script. 
+_Le port par défaut est 8888 afin de pouvoir lancer le script sans les droits admin. Les captures suivantes ont été effectuées avec le port 69, en droit admin._ 
 
 Le script effectue la chose suivante: 
 
@@ -101,6 +101,8 @@ __Sortie:__
 
 ```bash
 $ sudo ./test.sh
+md5 sums should be: 
+a60814a887e267e2412c268c549be5c0
 downloading test7777k from hepia.infolibre.ch... This will take 5 minutes
 unexpected block num 11161
 unexpected block num 11577
